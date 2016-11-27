@@ -164,8 +164,6 @@ func makeDeleteCall(endpoint string) error {
 		return err
 	}
 
-	Log.Errorf("%s", auth)
-
 	addAuthToHeader(&req.Header, auth)
 	client := &http.Client{}
 	resp, err := client.Do(req)
