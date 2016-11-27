@@ -28,17 +28,26 @@ func readFile(fileName string) ([]byte, error) {
 	return bytes, nil
 }
 
-func writeAuthToConfig(sa *SlyftAuth) error {
+func readConfig() (*SlyftRC, error) {
 	config, err := readFile(defaultConfigFile())
+
 	var sr SlyftRC
 	if err != nil {
-		Log.Info("A new config file will be created at " + defaultConfigFile())
-	} else {
-		if err2 := json.Unmarshal(config, &sr); err != nil {
-			Log.Info("The config file will be updated" + defaultConfigFile())
-			return err2
-		}
+		Log.Info("Cannot read config file" + defaultConfigFile() + ": " + err.Error())
+		return &sr, err
 	}
+
+	if err := json.Unmarshal(config, &sr); err != nil {
+		Log.Debugf("Cannot parse config file: " + defaultConfigFile() + ": " + err.Error())
+		return &sr, err
+	}
+
+	return &sr, nil
+}
+
+func writeAuthToConfig(sa *SlyftAuth) error {
+	sr, _ := readConfig()
+	// note -- we are ignoring the error here.
 
 	sr.Auth = *sa
 	newConfig, err := json.MarshalIndent(sr, "", "	")
