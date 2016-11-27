@@ -24,8 +24,3 @@ func DeleteUser(c *cli.Context) error {
 	fmt.Println("TODO TODO TODO")
 	return nil
 }
-
-func DummyFunction(c *cli.Context) error {
-	fmt.Println(*c)
-	return nil
-}
