@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -15,6 +16,36 @@ import (
 
 	"github.com/urfave/cli"
 )
+
+type SlyftAuth struct {
+	AccessToken string `json:"access_token"`
+	Client      string `json:"client"`
+	Uid         string `json:"uid"`
+}
+
+func (sa SlyftAuth) String() string {
+	bytes, err := json.Marshal(sa)
+	if err != nil {
+		return "Couldn't convert the Auth to string. Sorry about that"
+	}
+	return string(bytes)
+}
+
+type SlyftRC struct {
+	Auth     SlyftAuth
+	More     string
+	Settings string
+	To       string
+	Come     string
+}
+
+func (sr SlyftRC) String() string {
+	bytes, err := json.Marshal(sr)
+	if err != nil {
+		return "Couldn't convert the config to string. Sorry about that"
+	}
+	return string(bytes)
+}
 
 type Credentials struct {
 	Email                string `json:"email"`
@@ -56,6 +87,14 @@ func getCredentials(confirm bool) *Credentials {
 	}
 }
 
+func extractAuthFromHeader(hdr *http.Header) SlyftAuth {
+	return SlyftAuth{
+		AccessToken: hdr.Get("access-token"),
+		Client:      hdr.Get("client"),
+		Uid:         hdr.Get("uid"),
+	}
+}
+
 func authenticateUser(endpoint string, register bool) error {
 	url := ServerURL(endpoint)
 	creds := getCredentials(register)
@@ -68,20 +107,40 @@ func authenticateUser(endpoint string, register bool) error {
 	}
 	defer resp.Body.Close()
 
-	_, err = io.Copy(os.Stdout, resp.Body)
-	if err != nil {
-		Log.Fatal(err)
+	// Verify if the resp was ok
+	if resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusOK {
+		slyftAuth := extractAuthFromHeader(&resp.Header)
+		return writeAuthToConfig(&slyftAuth)
 	}
 
-	return nil
+	// handle the error
+	body, err := ioutil.ReadAll(resp.Body)
+	if err == nil {
+		Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
+		return errors.New(fmt.Sprintf("Server returned failure: %v\nBye", resp.Status))
+	}
+
+	return errors.New(fmt.Sprintf("Reading server resonse failed: %v\n", err))
 }
 
 func RegisterUser(c *cli.Context) error {
-	return authenticateUser("/auth", true)
+	err := authenticateUser("/auth", true)
+	if err != nil {
+		Log.Error("Sorry, registration failed")
+	} else {
+		fmt.Println("Successfully registered, have fun...")
+	}
+	return err
 }
 
 func LogUserIn(c *cli.Context) error {
-	return authenticateUser("/auth/sign_in", false)
+	err := authenticateUser("/auth/sign_in", false)
+	if err != nil {
+		Log.Error("Sorry, login failed")
+	} else {
+		fmt.Println("Login successful, have fun...")
+	}
+	return err
 }
 
 func LogUserOut(c *cli.Context) error {
