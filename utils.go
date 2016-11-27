@@ -63,3 +63,18 @@ func writeAuthToConfig(sa *SlyftAuth) error {
 	}
 	return nil
 }
+
+func readAuthFromConfig() (*SlyftAuth, error) {
+	sr, err := readConfig()
+	if err != nil {
+		Log.Error("You don't seem to be logged in. Failed to read your config: " + err.Error())
+		return nil, err
+	}
+
+	return &sr.Auth, nil
+}
+
+func deactivateLogin() {
+	var sa SlyftAuth
+	writeAuthToConfig(&sa)
+}

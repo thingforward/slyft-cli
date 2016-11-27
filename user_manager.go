@@ -143,12 +143,69 @@ func LogUserIn(c *cli.Context) error {
 	return err
 }
 
+func addAuthToHeader(hdr *http.Header, s *SlyftAuth) {
+	hdr.Add("access-token", s.AccessToken)
+	hdr.Add("client", s.Client)
+	hdr.Add("uid", s.Uid)
+}
+
+func makeDeleteCall(endpoint string) error {
+	url := ServerURL(endpoint)
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		Log.Critical("Failed to create a request: " + err.Error())
+		return err
+	}
+
+	auth, err := readAuthFromConfig()
+	deactivateLogin()
+	if err != nil {
+		return err
+	}
+
+	Log.Errorf("%s", auth)
+
+	addAuthToHeader(&req.Header, auth)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Verify if the resp was ok
+	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusOK {
+		slyftAuth := extractAuthFromHeader(&resp.Header)
+		return writeAuthToConfig(&slyftAuth)
+	}
+
+	// handle the error
+	body, err := ioutil.ReadAll(resp.Body)
+	if err == nil {
+		Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
+		return errors.New(fmt.Sprintf("Server returned failure: %v\nBye", resp.Status))
+	}
+
+	return errors.New(fmt.Sprintf("Reading server resonse failed: %v\n", err))
+}
+
 func LogUserOut(c *cli.Context) error {
-	fmt.Println("TODO TODO TODO")
-	return nil
+	err := makeDeleteCall("/auth/sign_out")
+	if err != nil {
+		Log.Error("Sorry, logout failed.")
+	} else {
+		fmt.Println("Bye for now. Looking forward to seeing you soon...")
+	}
+	return err
 }
 
 func DeleteUser(c *cli.Context) error {
-	fmt.Println("TODO TODO TODO")
-	return nil
+	err := makeDeleteCall("/auth")
+	if err != nil {
+		Log.Error("Sorry, deletion failed")
+	} else {
+		fmt.Println("Deleted the account. We are sorry to see you go. Come back soon...")
+	}
+	return err
 }
