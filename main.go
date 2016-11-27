@@ -16,7 +16,7 @@ var ProjectName string
 var Everything bool
 var BackendBaseUrl = os.Getenv("SLYFTBACKEND")
 
-var log = logging.MustGetLogger("ibtlogger")
+var Log = logging.MustGetLogger("ibtlogger")
 var format = logging.MustStringFormatter(
 	`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`,
 )
@@ -38,7 +38,7 @@ func setupLogger() {
 func init() {
 	setupLogger()
 	if BackendBaseUrl == "" {
-		log.Fatal("Backend URL missing, please contact tech support")
+		Log.Fatal("Backend URL missing, please contact tech support")
 	}
 }
 

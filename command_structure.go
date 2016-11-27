@@ -152,4 +152,15 @@ var CommandStructure = []cli.Command{
 			},
 		},
 	},
+	{
+		Name:  "server",
+		Usage: "Server checks and such",
+		Subcommands: []cli.Command{
+			{
+				Name:   "ping",
+				Usage:  "Ping the Slyft service",
+				Action: PingServer,
+			},
+		},
+	},
 }
