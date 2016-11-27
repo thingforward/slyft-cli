@@ -28,7 +28,7 @@ var CommandStructure = []cli.Command{
 		Aliases:  []string{"implode"},
 		Usage:    "destroy your account [think twice]",
 		Category: "\n   Your Account",
-		Action:   LogUserOut,
+		Action:   DeleteUser,
 	},
 	{
 		Name:     "project",
