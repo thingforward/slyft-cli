@@ -144,7 +144,7 @@ func LogUserIn(c *cli.Context) error {
 }
 
 func makeDeleteCall(endpoint string) error {
-	resp, err := Do(endpoint, "DELETE")
+	resp, err := Do(endpoint, "DELETE", nil)
 	deactivateLogin()
 	if err != nil {
 		return err

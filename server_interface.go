@@ -1,11 +1,16 @@
 package main
 
-import "net/http"
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+)
 
-func Do(endpoint, method string) (*http.Response, error) {
-	url := ServerURL(endpoint)
+func Do(resource, method string, params interface{}) (*http.Response, error) {
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(params)
+	req, err := http.NewRequest(method, ServerURL(resource), b)
 
-	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		Log.Critical("Failed to create a request: " + err.Error())
 		return nil, err
@@ -17,6 +22,7 @@ func Do(endpoint, method string) (*http.Response, error) {
 	}
 
 	addAuthToHeader(&req.Header, auth)
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	client := &http.Client{}
 	return client.Do(req)
 }

@@ -39,27 +39,27 @@ var CommandStructure = []cli.Command{
 			{
 				Name:   "create",
 				Usage:  "create a new project",
-				Action: DummyFunction,
+				Action: ProjectCreationHandler,
 			},
 			{
 				Name:   "list",
 				Usage:  "list all your projects",
-				Action: DummyFunction,
+				Action: ProjectListHandler,
 			},
 			{
 				Name:   "show",
 				Usage:  "show details of your project",
-				Action: DummyFunction,
+				Action: ProjectShowHandler,
 			},
-			{
-				Name:   "validate",
-				Usage:  "validate your project",
-				Action: DummyFunction,
-			},
+			//{
+			//Name:   "validate",
+			//Usage:  "validate your project",
+			//Action: ProjectValidationHandler,
+			//},
 			{
 				Name:   "delete",
 				Usage:  "create new",
-				Action: DummyFunction,
+				Action: ProjectDeletionHandler,
 			},
 		},
 	},

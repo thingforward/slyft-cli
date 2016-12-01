@@ -6,7 +6,7 @@ var CommandFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:        "project, p",
 		Value:       "",
-		Usage:       "name of the project",
+		Usage:       "Get the `Project Name`",
 		Destination: &ProjectName,
 	},
 	cli.BoolFlag{
