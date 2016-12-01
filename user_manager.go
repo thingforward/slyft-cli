@@ -149,24 +149,28 @@ func addAuthToHeader(hdr *http.Header, s *SlyftAuth) {
 	hdr.Add("uid", s.Uid)
 }
 
-func makeDeleteCall(endpoint string) error {
+func Do(endpoint, method string) (*http.Response, error) {
 	url := ServerURL(endpoint)
 
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		Log.Critical("Failed to create a request: " + err.Error())
-		return err
+		return nil, err
 	}
 
 	auth, err := readAuthFromConfig()
-	deactivateLogin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	addAuthToHeader(&req.Header, auth)
 	client := &http.Client{}
-	resp, err := client.Do(req)
+	return client.Do(req)
+}
+
+func makeDeleteCall(endpoint string) error {
+	resp, err := Do(endpoint, "DELETE")
+	deactivateLogin()
 	if err != nil {
 		return err
 	}
