@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -26,10 +25,7 @@ func setupLogger() {
 	logBackendWithFormat := logging.NewBackendFormatter(logBackend, format)
 	loggerLeveled := logging.AddModuleLevel(logBackendWithFormat)
 
-	level, err := logging.LogLevel(os.Getenv("DEBUGLEVEL"))
-	if err != nil {
-		fmt.Println("Logging level is set to %s", level)
-	}
+	level, _ := logging.LogLevel(os.Getenv("DEBUGLEVEL"))
 
 	loggerLeveled.SetLevel(level, "")
 	logging.SetBackend(loggerLeveled)
