@@ -2,27 +2,24 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/olekukonko/tablewriter"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"net/http"
 	"os"
-
-	"github.com/urfave/cli"
+	"time"
 )
 
-// GET    /v1/projects(.:format)            v1/projects#index
-// POST   /v1/projects(.:format)            v1/projects#create
-// GET    /v1/projects/new(.:format)        v1/projects#new
-// GET    /v1/projects/:id/edit(.:format)   v1/projects#edit
-// GET    /v1/projects/:id(.:format)        v1/projects#show
-// PATCH  /v1/projects/:id(.:format)        v1/projects#update
-// PUT    /v1/projects/:id(.:format)        v1/projects#update
-// DELETE /v1/projects/:id(.:format)        v1/projects#destroy
-
 type Project struct {
-	Name    string `json:"name"`
-	Details string `json:"details"`
+	Name      string    `json:"name"`
+	Details   string    `json:"details"`
+	Settings  string    `json:settings"`
+	UserId    int       `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type ProjectParam struct {
@@ -32,8 +29,8 @@ type ProjectParam struct {
 func createProjectParam(name, details string) *ProjectParam {
 	return &ProjectParam{
 		Project{
-			name,
-			details,
+			Name:    name,
+			Details: details,
 		},
 	}
 }
@@ -50,13 +47,48 @@ func ReadUserInput(prompt string) string {
 	return resp
 }
 
+func DisplayProjects(projects []Project) {
+	if len(projects) == 0 {
+		fmt.Println("No projects found")
+		return
+	}
+
+	var data [][]string
+	for i := range projects {
+		p := projects[i]
+		data = append(data, []string{p.Name, p.Details, p.Settings, p.CreatedAt.String(), p.UpdatedAt.String()})
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetColWidth(TerminalWidth())
+	table.SetHeader([]string{"Name", "Details", "Settings", "Created At", "Updated At"})
+	table.SetBorder(false)
+	table.AppendBulk(data)
+	table.Render()
+}
+
 func handleProjectResponse(resp *http.Response, expectedCode int, listExpected bool) error {
 	body, err := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode == expectedCode {
-		Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
-	}
+		if listExpected {
 
-	Log.Error(resp.StatusCode)
+			projects := make([]Project, 0)
+			if err := json.Unmarshal(body, &projects); err != nil {
+				Log.Error("Failed to read the server response, please try again: " + err.Error())
+				return err
+			}
+			DisplayProjects(projects)
+
+		} else {
+			p := &Project{}
+			if err := json.Unmarshal(body, &p); err != nil {
+				Log.Error("Failed to read the server response, please try again: " + err.Error())
+				return err
+			}
+			DisplayProjects([]Project{*p})
+		}
+		return nil
+	}
 
 	if err != nil {
 		return errors.New(fmt.Sprintf("Failed with following error: %v\n", err))
@@ -78,9 +110,24 @@ func ProjectCreationHandler(c *cli.Context) error {
 	}
 	defer resp.Body.Close()
 
-	return handleProjectResponse(resp, http.StatusCreated, true)
+	return handleProjectResponse(resp, http.StatusCreated, false)
 }
 
-func ProjectListHandler(c *cli.Context) error     { return nil }
-func ProjectShowHandler(c *cli.Context) error     { return nil }
-func ProjectDeletionHandler(c *cli.Context) error { return nil }
+func ProjectListHandler(c *cli.Context) error {
+	resp, err := Do("/v1/projects", "GET", nil)
+	if err != nil {
+		Log.Error("Creation failed: " + err.Error())
+	}
+	defer resp.Body.Close()
+
+	return handleProjectResponse(resp, http.StatusOK, true)
+	return nil
+}
+
+func ProjectShowHandler(c *cli.Context) error {
+	return nil
+}
+
+func ProjectDeletionHandler(c *cli.Context) error {
+	return nil
+}

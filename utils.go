@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"regexp"
+
+	"strconv"
 
 	"github.com/siddontang/go/log"
 )
@@ -77,4 +81,26 @@ func readAuthFromConfig() (*SlyftAuth, error) {
 func deactivateLogin() {
 	var sa SlyftAuth
 	writeAuthToConfig(&sa)
+}
+
+func TerminalWidth() int {
+	defaultWidth := 96 // brave new world. Not any more 80x24
+
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	out, err := cmd.Output()
+	if err != nil {
+		return defaultWidth
+	}
+	re := regexp.MustCompile("[0-9]+")
+	all := re.FindAllString(string(out), -1)
+	if len(all) < 2 {
+		return defaultWidth
+	}
+	width, err := strconv.Atoi(all[1])
+	if err != nil {
+		return defaultWidth
+	}
+
+	return width
 }
