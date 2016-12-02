@@ -123,17 +123,32 @@ func displayProjectsFromResponse(resp *http.Response, expectedCode int, listExpe
 	return nil
 }
 
-func createProject() {
-	projectName := ReadUserInput("Please provide project name: ")
-	projectDetails := ReadUserInput("Deatils to the project: ")
+func createProject(cmd *cli.Cmd) {
+	cmd.Spec = "[--name]"
+	name := cmd.StringOpt("name n", "", "Name for the project")
 
-	resp, err := Do("/v1/projects", "POST", createProjectParam(projectName, projectDetails))
-	if err != nil {
-		Log.Error(err)
-		return
+	cmd.Action = func() {
+		*name = strings.TrimSpace(*name)
+		if *name == "" {
+			temp := ReadUserInput("Please provide project name: ")
+			name = &temp
+			if strings.TrimSpace(*name) == "" {
+				fmt.Println("The project name cannot be empty")
+				cli.Exit(1)
+			}
+		} else {
+			fmt.Printf("Project Name: %s\n", *name)
+		}
+
+		projectDetails := ReadUserInput("Details to the project (optional): ")
+		resp, err := Do("/v1/projects", "POST", createProjectParam(*name, projectDetails))
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+		defer resp.Body.Close()
+		displayProjectsFromResponse(resp, http.StatusCreated, false)
 	}
-	defer resp.Body.Close()
-	displayProjectsFromResponse(resp, http.StatusCreated, false)
 }
 
 func listProjects() {
@@ -212,7 +227,7 @@ func deleteProject() {
 }
 
 func RegisterProjectRoutes(proj *cli.Cmd) {
-	proj.Command("create c", "Create a new project", func(cmd *cli.Cmd) { cmd.Action = createProject })
+	proj.Command("create c", "Create a new project", createProject)
 	proj.Command("list ls", "List all projects", func(cmd *cli.Cmd) { cmd.Action = listProjects })
 	proj.Command("show sh", "Show an existing project", func(cmd *cli.Cmd) { cmd.Action = showProject })
 	proj.Command("delete d", "Delete an existing project", func(cmd *cli.Cmd) { cmd.Action = deleteProject })
