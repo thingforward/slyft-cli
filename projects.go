@@ -59,6 +59,28 @@ func ReadUserInput(prompt string) string {
 	return strings.TrimSpace(resp)
 }
 
+func (p *Project) Display() { // String?
+	if p == nil {
+		return
+	}
+
+	var data [][]string
+	data = append(data, []string{"Name", p.Name})
+	data = append(data, []string{"Details", p.Details})
+	data = append(data, []string{"CreatedAt", p.CreatedAt.String()})
+	data = append(data, []string{"UpdatedAt", p.UpdatedAt.String()})
+	data = append(data, []string{"Settings", p.Settings})
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetColWidth(TerminalWidth())
+	table.SetHeader([]string{"Key", "Value"})
+	table.SetBorder(false)
+	table.AppendBulk(data)
+	fmt.Fprintf(os.Stdout, "\n---- Project Details ----\n")
+	table.Render()
+	fmt.Fprintf(os.Stdout, "\n")
+}
+
 func DisplayProjects(projects []Project) {
 	if len(projects) == 0 {
 		fmt.Println("No projects found")
@@ -68,16 +90,17 @@ func DisplayProjects(projects []Project) {
 	var data [][]string
 	for i := range projects {
 		p := projects[i]
-		data = append(data, []string{fmt.Sprintf("%d", i+1), p.Name, p.Details, p.Settings, p.CreatedAt.String(), p.UpdatedAt.String()})
+		data = append(data, []string{fmt.Sprintf("%d", i+1), p.Name, p.Details})
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())
-	table.SetHeader([]string{"Number", "Name", "Details", "Settings", "Created At", "Updated At"})
+	table.SetHeader([]string{"Number", "Name", "Details"})
 	table.SetBorder(false)
 	table.AppendBulk(data)
 	fmt.Fprintf(os.Stdout, "\n")
 	table.Render()
+	fmt.Fprintf(os.Stdout, "\n")
 }
 
 func extractProjectsFromBody(body []byte) ([]Project, error) {
@@ -119,7 +142,14 @@ func displayProjectsFromResponse(resp *http.Response, expectedCode int, listExpe
 		return err
 	}
 
-	DisplayProjects(projects)
+	if listExpected {
+		DisplayProjects(projects)
+	} else {
+		if len(projects) == 1 {
+			projects[0].Display()
+		}
+	}
+
 	return nil
 }
 
