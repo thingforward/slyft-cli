@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jawher/mow.cli"
 	"github.com/olekukonko/tablewriter"
-	"github.com/urfave/cli"
 	"strings"
 )
 
@@ -123,27 +123,27 @@ func displayProjectsFromResponse(resp *http.Response, expectedCode int, listExpe
 	return nil
 }
 
-func ProjectCreationHandler(c *cli.Context) error {
-	if ProjectName == "" {
-		ProjectName = ReadUserInput("Please provide project name: ")
-	}
+func createProject() {
+	projectName := ReadUserInput("Please provide project name: ")
 	projectDetails := ReadUserInput("Deatils to the project: ")
 
-	resp, err := Do("/v1/projects", "POST", createProjectParam(ProjectName, projectDetails))
+	resp, err := Do("/v1/projects", "POST", createProjectParam(projectName, projectDetails))
 	if err != nil {
-		return err
+		Log.Error(err)
+		return
 	}
 	defer resp.Body.Close()
-	return displayProjectsFromResponse(resp, http.StatusCreated, false)
+	displayProjectsFromResponse(resp, http.StatusCreated, false)
 }
 
-func ProjectListHandler(c *cli.Context) error {
+func listProjects() {
 	resp, err := Do("/v1/projects", "GET", nil)
 	if err != nil {
-		return err
+		Log.Error(err)
+		return
 	}
 	defer resp.Body.Close()
-	return displayProjectsFromResponse(resp, http.StatusOK, true)
+	displayProjectsFromResponse(resp, http.StatusOK, true)
 }
 
 func chooseProject(message string) (int, error) {
@@ -186,26 +186,34 @@ func findProjectAndApplyMethod(method string, message string) (*http.Response, e
 	return Do(projectUrl(chosenId), method, nil)
 }
 
-func ProjectShowHandler(c *cli.Context) error {
+func showProject() {
 	resp, err := findProjectAndApplyMethod("GET", "Which project needs to be diplayed in detail: ")
 	if err != nil {
-		return err
+		Log.Error(err)
+		return
 	}
 	defer resp.Body.Close()
-	return displayProjectsFromResponse(resp, http.StatusOK, false)
+	displayProjectsFromResponse(resp, http.StatusOK, false)
 }
 
-func ProjectDeletionHandler(c *cli.Context) error {
+func deleteProject() {
 	resp, err := findProjectAndApplyMethod("DELETE", "Which project needs to be diplayed in detail: ")
 	if err != nil {
-		return err
+		Log.Error(err)
+		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNoContent {
 		fmt.Println("The project was successfully deleted")
-		return nil
+		return
 	}
 
 	Log.Infof("Deletion was no successful, try later? (more: expected %v received %v)\n", http.StatusNoContent, resp.StatusCode)
-	return errors.New("Received wrong return value")
+}
+
+func RegisterProjectRoutes(proj *cli.Cmd) {
+	proj.Command("create c", "Create a new project", func(cmd *cli.Cmd) { cmd.Action = createProject })
+	proj.Command("list ls", "List all projects", func(cmd *cli.Cmd) { cmd.Action = listProjects })
+	proj.Command("show sh", "Show an existing project", func(cmd *cli.Cmd) { cmd.Action = showProject })
+	proj.Command("delete d", "Delete an existing project", func(cmd *cli.Cmd) { cmd.Action = deleteProject })
 }

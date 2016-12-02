@@ -12,9 +12,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/jawher/mow.cli"
 	"golang.org/x/crypto/ssh/terminal"
-
-	"github.com/urfave/cli"
 )
 
 type SlyftAuth struct {
@@ -123,24 +122,22 @@ func authenticateUser(endpoint string, register bool) error {
 	return errors.New(fmt.Sprintf("Reading server resonse failed: %v\n", err))
 }
 
-func RegisterUser(c *cli.Context) error {
+func RegisterUser() {
 	err := authenticateUser("/auth", true)
 	if err != nil {
 		Log.Error("Sorry, registration failed")
 	} else {
 		fmt.Println("Successfully registered, have fun...")
 	}
-	return err
 }
 
-func LogUserIn(c *cli.Context) error {
+func LogUserIn() {
 	err := authenticateUser("/auth/sign_in", false)
 	if err != nil {
 		Log.Error("Sorry, login failed")
 	} else {
 		fmt.Println("Login successful, have fun...")
 	}
-	return err
 }
 
 func makeDeleteCall(endpoint string) error {
@@ -167,22 +164,27 @@ func makeDeleteCall(endpoint string) error {
 	return errors.New(fmt.Sprintf("Reading server resonse failed: %v\n", err))
 }
 
-func LogUserOut(c *cli.Context) error {
+func LogUserOut() {
 	err := makeDeleteCall("/auth/sign_out")
 	if err != nil {
 		Log.Error("Sorry, logout failed.")
 	} else {
 		fmt.Println("Bye for now. Looking forward to seeing you soon...")
 	}
-	return err
 }
 
-func DeleteUser(c *cli.Context) error {
+func DeleteUser() {
 	err := makeDeleteCall("/auth")
 	if err != nil {
 		Log.Error("Sorry, deletion failed")
 	} else {
 		fmt.Println("Deleted the account. We are sorry to see you go. Come back soon...")
 	}
-	return err
+}
+
+func RegisterUserRoutes(user *cli.Cmd) {
+	user.Command("register r", "Register ixxx yourself", func(cmd *cli.Cmd) { cmd.Action = RegisterUser })
+	user.Command("login l", "Login with your credentials", func(cmd *cli.Cmd) { cmd.Action = LogUserIn })
+	user.Command("logout signout", "Log out from your session", func(cmd *cli.Cmd) { cmd.Action = LogUserOut })
+	user.Command("destroy", "Delete your account", func(cmd *cli.Cmd) { cmd.Action = DeleteUser })
 }
