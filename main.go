@@ -49,6 +49,7 @@ func main() {
 
 	app.Command("user account", "Account management", RegisterUserRoutes)
 	app.Command("project p", "Project management", RegisterProjectRoutes)
+	app.Command("asset a", "Asset management", RegisterAssetRoutes)
 
 	app.Run(os.Args)
 }
