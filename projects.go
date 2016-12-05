@@ -30,6 +30,10 @@ type ProjectParam struct {
 	Project Project `json:"project"`
 }
 
+type SearchString struct {
+	SearchString string `json:"search_string"`
+}
+
 func createProjectParam(name, details string) *ProjectParam {
 	return &ProjectParam{
 		Project{
@@ -84,6 +88,11 @@ func (p *Project) Display() { // String?
 func DisplayProjects(projects []Project) {
 	if len(projects) == 0 {
 		fmt.Println("No projects found")
+		return
+	}
+
+	if len(projects) == 1 {
+		projects[0].Display()
 		return
 	}
 
@@ -155,7 +164,7 @@ func displayProjectsFromResponse(resp *http.Response, expectedCode int, listExpe
 
 func createProject(cmd *cli.Cmd) {
 	cmd.Spec = "[--name]"
-	name := cmd.StringOpt("name n", "", "Name for the project")
+	name := cmd.StringOpt("name", "", "Name for the project")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
@@ -181,18 +190,30 @@ func createProject(cmd *cli.Cmd) {
 	}
 }
 
-func listProjects() {
-	resp, err := Do("/v1/projects", "GET", nil)
-	if err != nil {
-		Log.Error(err)
-		return
+func FindProjects(portion string) (*http.Response, error) {
+	if strings.TrimSpace(portion) == "" {
+		return Do("/v1/projects", "GET", nil)
 	}
-	defer resp.Body.Close()
-	displayProjectsFromResponse(resp, http.StatusOK, true)
+	return Do("/v1/projects/search", "GET", &SearchString{portion})
 }
 
-func chooseProject(message string) (int, error) {
-	resp, err := Do("/v1/projects", "GET", nil)
+func listProjects(cmd *cli.Cmd) {
+	cmd.Spec = "[--name]"
+	name := cmd.StringOpt("name", "", "Name for the project")
+
+	cmd.Action = func() {
+		resp, err := FindProjects(*name)
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+		defer resp.Body.Close()
+		displayProjectsFromResponse(resp, http.StatusOK, true)
+	}
+}
+
+func chooseProject(portion, message string) (int, error) {
+	resp, err := FindProjects(portion)
 	if err != nil {
 		return -1, err
 	}
@@ -202,10 +223,15 @@ func chooseProject(message string) (int, error) {
 		return -1, err
 	}
 
-	DisplayProjects(projects)
 	if len(projects) == 0 {
 		return -1, errors.New("Nothing to process")
 	}
+
+	if len(projects) == 1 {
+		return projects[0].ID, nil
+	}
+
+	DisplayProjects(projects)
 
 	choice, err := ReadUserIntInput(message)
 	if err != nil {
@@ -223,42 +249,53 @@ func projectUrl(pid int) string {
 	return fmt.Sprintf("/v1/projects/%d", pid)
 }
 
-func findProjectAndApplyMethod(method string, message string) (*http.Response, error) {
-	chosenId, err := chooseProject(message)
+func findProjectAndApplyMethod(portion, method, message string) (*http.Response, error) {
+	chosenId, err := chooseProject(portion, message)
 	if err != nil {
 		return nil, err
 	}
+	// if method == DELETE --- then confirm.
 	return Do(projectUrl(chosenId), method, nil)
 }
 
-func showProject() {
-	resp, err := findProjectAndApplyMethod("GET", "Which project needs to be diplayed in detail: ")
-	if err != nil {
-		Log.Error(err)
-		return
+func showProject(cmd *cli.Cmd) {
+	cmd.Spec = "[--name]"
+	name := cmd.StringOpt("name", "", "Name of the project")
+
+	cmd.Action = func() {
+		resp, err := findProjectAndApplyMethod(*name, "GET", "Which project needs to be diplayed in detail: ")
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+		defer resp.Body.Close()
+		displayProjectsFromResponse(resp, http.StatusOK, false)
 	}
-	defer resp.Body.Close()
-	displayProjectsFromResponse(resp, http.StatusOK, false)
 }
 
-func deleteProject() {
-	resp, err := findProjectAndApplyMethod("DELETE", "Which project needs to be diplayed in detail: ")
-	if err != nil {
-		Log.Error(err)
-		return
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNoContent {
-		fmt.Println("The project was successfully deleted")
-		return
-	}
+func deleteProject(cmd *cli.Cmd) {
+	cmd.Spec = "[--name]"
+	name := cmd.StringOpt("name", "", "Name (or part of it) of the project")
 
-	Log.Infof("Deletion was no successful, try later? (more: expected %v received %v)\n", http.StatusNoContent, resp.StatusCode)
+	cmd.Action = func() {
+		resp, err := findProjectAndApplyMethod(*name, "DELETE", "Which project needs to be diplayed in detail: ")
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusNoContent {
+			fmt.Println("The project was successfully deleted")
+			return
+		}
+
+		Log.Infof("Deletion was no successful, try later? (more: expected %v received %v)\n", http.StatusNoContent, resp.StatusCode)
+	}
 }
 
 func RegisterProjectRoutes(proj *cli.Cmd) {
 	proj.Command("create c", "Create a new project", createProject)
-	proj.Command("list ls", "List all projects", func(cmd *cli.Cmd) { cmd.Action = listProjects })
-	proj.Command("show sh", "Show an existing project", func(cmd *cli.Cmd) { cmd.Action = showProject })
-	proj.Command("delete d", "Delete an existing project", func(cmd *cli.Cmd) { cmd.Action = deleteProject })
+	proj.Command("list ls", "List all projects", listProjects)
+	proj.Command("show sh", "Show an existing project", showProject)
+	proj.Command("delete d", "Delete an existing project", deleteProject)
 }
