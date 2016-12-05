@@ -224,7 +224,7 @@ func chooseProject(portion, message string) (int, error) {
 	}
 
 	if len(projects) == 0 {
-		return -1, errors.New("Nothing to process")
+		return -1, errors.New("No such project. Sorry")
 	}
 
 	if len(projects) == 1 {
