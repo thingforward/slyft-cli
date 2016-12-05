@@ -121,6 +121,20 @@ func displayAssetsFromResponse(resp *http.Response, expectedCode int, listExpect
 	return nil
 }
 
+func getAndDisplayAssets(endpoint string) {
+	resp, err := Do(endpoint, "GET", nil)
+	if err != nil {
+		Log.Error(err)
+		return
+	}
+	defer resp.Body.Close()
+	displayAssetsFromResponse(resp, http.StatusOK, true)
+}
+
+func assetEndPointForProjectId(pid int) string {
+	return fmt.Sprintf("/v1/projects/%d/assets", pid)
+}
+
 func listAssets(cmd *cli.Cmd) {
 	cmd.Spec = "[--project] | [--all]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
@@ -129,17 +143,17 @@ func listAssets(cmd *cli.Cmd) {
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
 		if *all || *name == "" {
-			resp, err := Do("/v1/assets", "GET", nil)
-			if err != nil {
-				Log.Error(err)
-				return
-			}
-			defer resp.Body.Close()
-			displayAssetsFromResponse(resp, http.StatusOK, true)
+			getAndDisplayAssets("/v1/assets")
+			return
 		}
 
 		// first get the project, then get the pid, and make the call.
-
+		projectId, err := chooseProject(*name, "Which project's assets would you like to see?")
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+		getAndDisplayAssets(assetEndPointForProjectId(projectId))
 	}
 }
 
