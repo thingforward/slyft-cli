@@ -19,7 +19,7 @@ slyft.mac:
 slyft.lin:
 	GOARCH=$(ARCHUNIX) GOOS=$(LINUX) go build -o slyft.lin *.go
 
-slyft: main.go user_manager.go *.go
+slyft: main.go *.go
 	go build -o slyft *.go
 
 clean:
