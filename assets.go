@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -131,6 +132,46 @@ func getAndDisplayAssets(endpoint string) {
 	displayAssetsFromResponse(resp, http.StatusOK, true)
 }
 
+type AssetPost struct {
+	Name  string `json:"name"`
+	Asset string `json:"asset"` // note: this will be base64 string
+}
+
+type AssetParam struct {
+	Asset AssetPost `json:"asset"`
+}
+
+func creatAssetParam(file string) (*AssetParam, error) {
+	// read the file content (use ioutil)
+	bytes, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AssetParam{
+		AssetPost{
+			Name:  file,
+			Asset: "data:text/plain;base64," + base64.StdEncoding.EncodeToString(bytes),
+		},
+	}, nil
+}
+
+func readFileAndPostAsset(file string, pid int) {
+	assetParam, err := creatAssetParam(file)
+	if err != nil {
+		Log.Error(err)
+		return
+	}
+
+	resp, err := Do(assetEndPointForProjectId(pid), "POST", assetParam)
+	if err != nil {
+		Log.Error(err)
+		return
+	}
+	defer resp.Body.Close()
+	displayAssetsFromResponse(resp, http.StatusCreated, false)
+}
+
 func assetEndPointForProjectId(pid int) string {
 	return fmt.Sprintf("/v1/projects/%d/assets", pid)
 }
@@ -148,7 +189,7 @@ func listAssets(cmd *cli.Cmd) {
 		}
 
 		// first get the project, then get the pid, and make the call.
-		projectId, err := chooseProject(*name, "Which project's assets would you like to see?")
+		projectId, err := chooseProject(*name, "Which project's assets would you like to see: ")
 		if err != nil {
 			Log.Error(err)
 			return
@@ -157,8 +198,27 @@ func listAssets(cmd *cli.Cmd) {
 	}
 }
 
+func addAsset(cmd *cli.Cmd) {
+	cmd.Spec = "--project --file"
+	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	file := cmd.StringOpt("file f", "", "path to the file which you want as an asset")
+
+	cmd.Action = func() {
+		*name = strings.TrimSpace(*name)
+		// first get the project, then get the pid, and make the call.
+		pid, err := chooseProject(*name, "Add asset to: ")
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+
+		*file = strings.TrimSpace(*file)
+		readFileAndPostAsset(*file, pid)
+	}
+}
+
 func RegisterAssetRoutes(proj *cli.Cmd) {
-	//proj.Command("add a", "Add asset to a project", addAsset)
+	proj.Command("add a", "Add asset to a project", addAsset)
 	proj.Command("list ls", "List your assets", listAssets)
 	//proj.Command("show sh", "Show details of an existing project", func(cmd *cli.Cmd) { cmd.Action = showAsset })
 	//proj.Command("delete d", "Remove and asset from a project", func(cmd *cli.Cmd) { cmd.Action = removeAsset })
