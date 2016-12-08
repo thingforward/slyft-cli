@@ -56,6 +56,11 @@ func DisplayAssets(assets []Asset) {
 		return
 	}
 
+	if len(assets) == 1 {
+		assets[0].Display()
+		return
+	}
+
 	var data [][]string
 	for i := range assets {
 		a := assets[i]
@@ -105,31 +110,43 @@ func extractAssetFromResponse(resp *http.Response, expectedCode int, listExpecte
 	return extractAssetFromBody(body)
 }
 
-func displayAssetsFromResponse(resp *http.Response, expectedCode int, listExpected bool) error {
-	assets, err := extractAssetFromResponse(resp, expectedCode, listExpected)
-	if err != nil {
-		return err
-	}
-
-	if listExpected {
-		DisplayAssets(assets)
-	} else {
-		if len(assets) == 1 {
-			assets[0].Display()
-		}
-	}
-
-	return nil
-}
-
-func getAndDisplayAssets(endpoint string) {
+func chooseAsset(endpoint string, askUser bool, message string) (*Asset, error) {
 	resp, err := Do(endpoint, "GET", nil)
 	if err != nil {
 		Log.Error(err)
-		return
+		return nil, err
 	}
 	defer resp.Body.Close()
-	displayAssetsFromResponse(resp, http.StatusOK, true)
+	assets, err := extractAssetFromResponse(resp, http.StatusOK, true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(assets) == 0 {
+		return nil, errors.New("No such asset. Sorry")
+	}
+
+	if len(assets) == 1 {
+		return &assets[0], nil
+	}
+
+	DisplayAssets(assets)
+
+	if !askUser {
+		return nil, nil
+	}
+
+	choice, err := ReadUserIntInput(message)
+	if err != nil {
+		return nil, err
+	}
+
+	if choice > len(assets) {
+		return nil, errors.New("Plese choose a number from the first column")
+	}
+
+	return &assets[choice-1], nil
 }
 
 type AssetPost struct {
@@ -169,7 +186,15 @@ func readFileAndPostAsset(file string, pid int) {
 		return
 	}
 	defer resp.Body.Close()
-	displayAssetsFromResponse(resp, http.StatusCreated, false)
+	assets, err := extractAssetFromResponse(resp, http.StatusCreated, false)
+	if err != nil {
+		Log.Error(err)
+		return
+	}
+
+	if len(assets) == 1 {
+		assets[0].Display()
+	}
 }
 
 func assetEndPointForProjectId(pid int) string {
@@ -184,7 +209,7 @@ func listAssets(cmd *cli.Cmd) {
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
 		if *all || *name == "" {
-			getAndDisplayAssets("/v1/assets")
+			chooseAsset("/v1/assets", false, "")
 			return
 		}
 
@@ -194,7 +219,7 @@ func listAssets(cmd *cli.Cmd) {
 			Log.Error(err)
 			return
 		}
-		getAndDisplayAssets(assetEndPointForProjectId(projectId))
+		chooseAsset(assetEndPointForProjectId(projectId), false, "")
 	}
 }
 
@@ -217,9 +242,42 @@ func addAsset(cmd *cli.Cmd) {
 	}
 }
 
+func (ass *Asset) EndPoint() string {
+	return fmt.Sprintf("%s/%d", assetEndPointForProjectId(ass.ProjectId), ass.ID)
+}
+
+func removeAsset(cmd *cli.Cmd) {
+	cmd.Spec = "[--project] | [--all]"
+	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	all := cmd.BoolOpt("all a", false, "Fetch details of all your assets (do not combine with -p)")
+
+	cmd.Action = func() {
+		*name = strings.TrimSpace(*name)
+		var ass *Asset
+		var err error
+		if *all || *name == "" {
+			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ")
+		} else {
+			// first get the project, then get the pid, and make the call.
+			projectId, err := chooseProject(*name, "Which project's assets would you like to see: ")
+			if err != nil {
+				Log.Error(err)
+				return
+			}
+			ass, err = chooseAsset(assetEndPointForProjectId(projectId), true, "Which one shall be removed: ")
+		}
+
+		if err != nil {
+			Log.Error(err)
+		}
+
+		Do(ass.EndPoint(), "DELETE", nil)
+	}
+}
+
 func RegisterAssetRoutes(proj *cli.Cmd) {
 	proj.Command("add a", "Add asset to a project", addAsset)
 	proj.Command("list ls", "List your assets", listAssets)
 	//proj.Command("show sh", "Show details of an existing project", func(cmd *cli.Cmd) { cmd.Action = showAsset })
-	//proj.Command("delete d", "Remove and asset from a project", func(cmd *cli.Cmd) { cmd.Action = removeAsset })
+	proj.Command("delete d", "Remove and asset from a project", removeAsset)
 }
