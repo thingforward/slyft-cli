@@ -235,27 +235,22 @@ func (p *Project) AssetsUrl() string {
 	return p.EndPoint() + "/assets"
 }
 
-func findProjectAndApplyMethod(portion, method, message string) (*http.Response, error) {
-	p, err := chooseProject(portion, message)
-	if err != nil {
-		return nil, err
-	}
-	// if method == DELETE --- then confirm.
-	return Do(p.EndPoint(), method, nil)
-}
-
 func showProject(cmd *cli.Cmd) {
 	cmd.Spec = "[--name]"
 	name := cmd.StringOpt("name", "", "Name of the project")
 
 	cmd.Action = func() {
-		resp, err := findProjectAndApplyMethod(*name, "GET", "Which project needs to be diplayed in detail: ")
-		if err != nil {
-			Log.Error(err)
-			return
+		p, err := chooseProject(*name, "Which project needs to be diplayed in detail: ")
+		if err == nil {
+			resp, err := Do(p.EndPoint(), "GET", nil)
+			defer resp.Body.Close()
+			if err == nil {
+				displayProjectsFromResponse(resp, http.StatusOK, false)
+				return
+			}
 		}
-		defer resp.Body.Close()
-		displayProjectsFromResponse(resp, http.StatusOK, false)
+		Log.Error(err)
+		return
 	}
 }
 
