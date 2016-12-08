@@ -22,7 +22,6 @@ type Asset struct {
 	ProjectName string    `json:"project_name"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	Asset       string    `json:"asset"`
 	Url         string    `json:"url"`
 }
 
@@ -37,7 +36,6 @@ func (a *Asset) Display() { // String?
 	data = append(data, []string{"ProjectName", a.ProjectName})
 	data = append(data, []string{"CreatedAt", a.CreatedAt.String()})
 	data = append(data, []string{"UpdatedAt", a.UpdatedAt.String()})
-	data = append(data, []string{"Asset", a.Asset})
 	data = append(data, []string{"Url", a.Url})
 
 	table := tablewriter.NewWriter(os.Stdout)
@@ -269,15 +267,23 @@ func removeAsset(cmd *cli.Cmd) {
 
 		if err != nil {
 			Log.Error(err)
+			return
 		}
 
-		Do(ass.EndPoint(), "DELETE", nil)
+		confirm := ReadUserInput("Are you sure? [no]: ")
+		if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
+			resp, err := Do(ass.EndPoint(), "DELETE", nil)
+			if err != nil || resp.StatusCode != 204 {
+				Log.Error("Something went wrong. Please try again")
+			}
+		} else {
+			Log.Error("Good decision!")
+		}
 	}
 }
 
 func RegisterAssetRoutes(proj *cli.Cmd) {
 	proj.Command("add a", "Add asset to a project", addAsset)
 	proj.Command("list ls", "List your assets", listAssets)
-	//proj.Command("show sh", "Show details of an existing project", func(cmd *cli.Cmd) { cmd.Action = showAsset })
 	proj.Command("delete d", "Remove and asset from a project", removeAsset)
 }
