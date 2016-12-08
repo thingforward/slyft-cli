@@ -194,50 +194,54 @@ func listProjects(cmd *cli.Cmd) {
 	}
 }
 
-func chooseProject(portion, message string) (int, error) {
+func chooseProject(portion, message string) (*Project, error) {
 	resp, err := FindProjects(portion)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	projects, err := extractProjectFromResponse(resp, http.StatusOK, true)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 
 	if len(projects) == 0 {
-		return -1, errors.New("No such project. Sorry")
+		return nil, errors.New("No such project. Sorry")
 	}
 
 	if len(projects) == 1 {
-		return projects[0].ID, nil
+		return &projects[0], nil
 	}
 
 	DisplayProjects(projects)
 
 	choice, err := ReadUserIntInput(message)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 
 	if choice > len(projects) {
-		return -1, errors.New("Plese choose a number from the first column")
+		return nil, errors.New("Plese choose a number from the first column")
 	}
 
-	return projects[choice-1].ID, nil
+	return &projects[choice-1], nil
 }
 
-func projectUrl(pid int) string {
-	return fmt.Sprintf("/v1/projects/%d", pid)
+func (p *Project) EndPoint() string {
+	return fmt.Sprintf("/v1/projects/%d", p.ID)
+}
+
+func (p *Project) AssetsUrl() string {
+	return p.EndPoint() + "/assets"
 }
 
 func findProjectAndApplyMethod(portion, method, message string) (*http.Response, error) {
-	chosenId, err := chooseProject(portion, message)
+	p, err := chooseProject(portion, message)
 	if err != nil {
 		return nil, err
 	}
 	// if method == DELETE --- then confirm.
-	return Do(projectUrl(chosenId), method, nil)
+	return Do(p.EndPoint(), method, nil)
 }
 
 func showProject(cmd *cli.Cmd) {
@@ -260,18 +264,12 @@ func deleteProject(cmd *cli.Cmd) {
 	name := cmd.StringOpt("name", "", "Name (or part of it) of the project")
 
 	cmd.Action = func() {
-		resp, err := findProjectAndApplyMethod(*name, "DELETE", "Which project needs to be diplayed in detail: ")
+		p, err := chooseProject(*name, "Which project needs to be diplayed in detail: ")
 		if err != nil {
 			Log.Error(err)
 			return
 		}
-		defer resp.Body.Close()
-		if resp.StatusCode == http.StatusNoContent {
-			fmt.Println("The project was successfully deleted")
-			return
-		}
-
-		Log.Infof("Deletion was no successful, try later? (more: expected %v received %v)\n", http.StatusNoContent, resp.StatusCode)
+		p.Delete()
 	}
 }
 
