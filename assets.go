@@ -91,23 +91,6 @@ func extractAssetFromBody(body []byte) ([]Asset, error) {
 	return []Asset{*a}, nil
 }
 
-func extractAssetFromResponse(resp *http.Response, expectedCode int, listExpected bool) ([]Asset, error) {
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != expectedCode {
-		return nil, errors.New(fmt.Sprintf("Failed with the wrong code: %v. (expected %v)\n", resp.StatusCode, expectedCode))
-	}
-
-	if listExpected {
-		return extractAssetsFromBody(body)
-	}
-
-	return extractAssetFromBody(body)
-}
-
 func chooseAsset(endpoint string, askUser bool, message string) (*Asset, error) {
 	resp, err := Do(endpoint, "GET", nil)
 	if err != nil {
