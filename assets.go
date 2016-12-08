@@ -227,6 +227,22 @@ func (ass *Asset) EndPoint() string {
 	return fmt.Sprintf("%s/%d", assetEndPointForProjectId(ass.ProjectId), ass.ID)
 }
 
+func (ass *Asset) Delete() {
+
+	if ass == nil {
+		return
+	}
+	confirm := ReadUserInput("Are you sure? [no]: ")
+	if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
+		resp, err := Do(ass.EndPoint(), "DELETE", nil)
+		if err != nil || resp.StatusCode != 204 {
+			Log.Error("Something went wrong. Please try again")
+		}
+	} else {
+		Log.Error("Good decision!")
+	}
+}
+
 func removeAsset(cmd *cli.Cmd) {
 	cmd.Spec = "[--project] | [--all]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
@@ -240,8 +256,8 @@ func removeAsset(cmd *cli.Cmd) {
 			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ")
 		} else {
 			// first get the project, then get the pid, and make the call.
-			projectId, err := chooseProject(*name, "Which project's assets would you like to see: ")
-			if err != nil {
+			projectId, err2 := chooseProject(*name, "Which project's assets would you like to see: ")
+			if err2 != nil {
 				Log.Error(err)
 				return
 			}
@@ -253,15 +269,7 @@ func removeAsset(cmd *cli.Cmd) {
 			return
 		}
 
-		confirm := ReadUserInput("Are you sure? [no]: ")
-		if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
-			resp, err := Do(ass.EndPoint(), "DELETE", nil)
-			if err != nil || resp.StatusCode != 204 {
-				Log.Error("Something went wrong. Please try again")
-			}
-		} else {
-			Log.Error("Good decision!")
-		}
+		ass.Delete()
 	}
 }
 

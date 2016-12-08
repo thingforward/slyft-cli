@@ -19,7 +19,7 @@ type Project struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
 	Details   string    `json:"details"`
-	Settings  string    `json:settings"`
+	Settings  string    `json:"settings"`
 	UserID    int       `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -53,7 +53,7 @@ func ReadUserIntInput(prompt string) (int, error) {
 
 func ReadUserInput(prompt string) string {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf(prompt)
+	fmt.Print(prompt)
 	resp, err := reader.ReadString('\n')
 	if err != nil {
 		return ""
