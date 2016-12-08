@@ -33,11 +33,12 @@ type SearchString struct {
 	SearchString string `json:"search_string"`
 }
 
-func createProjectParam(name, details string) *ProjectParam {
+func createProjectParam(name, details, settings string) *ProjectParam {
 	return &ProjectParam{
 		Project{
-			Name:    name,
-			Details: details,
+			Name:     name,
+			Details:  details,
+			Settings: settings,
 		},
 	}
 }
@@ -72,7 +73,7 @@ func (p *Project) Display() { // String?
 	data = append(data, []string{"Details", p.Details})
 	data = append(data, []string{"CreatedAt", p.CreatedAt.String()})
 	data = append(data, []string{"UpdatedAt", p.UpdatedAt.String()})
-	data = append(data, []string{"Settings", p.Settings})
+	data = append(data, []string{"Settings", string(p.Settings)})
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())
@@ -162,13 +163,34 @@ func createProject(cmd *cli.Cmd) {
 		}
 
 		projectDetails := ReadUserInput("Details to the project (optional): ")
-		resp, err := Do("/v1/projects", "POST", createProjectParam(*name, projectDetails))
+		resp, err := Do("/v1/projects", "POST", createProjectParam(*name, projectDetails, ""))
 		if err != nil {
 			Log.Error(err)
 			return
 		}
 		defer resp.Body.Close()
 		displayProjectsFromResponse(resp, http.StatusCreated, false)
+	}
+}
+
+func settingsProject(cmd *cli.Cmd) {
+	cmd.Spec = "--name KEY VALUE"
+	name := cmd.StringOpt("name", "", "Name for the project")
+	key := cmd.StringArg("KEY", "", "Name of the setting")
+	value := cmd.StringArg("VALUE", "", "Value of the setting")
+	cmd.Action = func() {
+		p, err := chooseProject(*name, "Which project needs to be updated: ")
+		if err == nil {
+			resp, err := Do(p.EndPoint(), "PUT", createProjectParam("", "", fmt.Sprintf(`{"%s": "%s"}`, *key, *value)))
+			defer resp.Body.Close()
+			if err != nil || resp.StatusCode != http.StatusNoContent {
+				Log.Error("Something went wrong. Please try again")
+			} else {
+				Log.Error("Was successfully updated")
+			}
+			return
+		}
+		Log.Error(err)
 	}
 }
 
@@ -270,6 +292,7 @@ func deleteProject(cmd *cli.Cmd) {
 
 func RegisterProjectRoutes(proj *cli.Cmd) {
 	proj.Command("create c", "Create a new project", createProject)
+	proj.Command("settings", "Create a new project", settingsProject)
 	proj.Command("list ls", "List all projects", listProjects)
 	proj.Command("show sh", "Show an existing project", showProject)
 	proj.Command("delete d", "Delete an existing project", deleteProject)
