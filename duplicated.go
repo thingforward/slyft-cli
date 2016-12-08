@@ -48,6 +48,7 @@ func (ass *Asset) Delete() {
 	confirm := ReadUserInput("Are you sure? [no]: ")
 	if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
 		resp, err := Do(ass.EndPoint(), "DELETE", nil)
+		defer resp.Body.Close()
 		if err != nil || resp.StatusCode != http.StatusNoContent {
 			Log.Error("Something went wrong. Please try again")
 		} else {
@@ -65,6 +66,7 @@ func (p *Project) Delete() {
 	confirm := ReadUserInput("Are you sure? [no]: ")
 	if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
 		resp, err := Do(p.EndPoint(), "DELETE", nil)
+		defer resp.Body.Close()
 		if err != nil || resp.StatusCode != http.StatusNoContent {
 			Log.Error("Something went wrong. Please try again")
 		} else {
