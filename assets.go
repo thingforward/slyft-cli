@@ -101,18 +101,19 @@ func chooseAsset(endpoint string, askUser bool, message string) (*Asset, error) 
 	assets, err := extractAssetFromResponse(resp, http.StatusOK, true)
 
 	if err != nil {
+		Log.Error(err)
 		return nil, err
 	}
 
 	if len(assets) == 0 {
-		return nil, errors.New("No such asset. Sorry")
+		return nil, errors.New("No asset. Sorry")
 	}
+
+	DisplayAssets(assets)
 
 	if len(assets) == 1 {
 		return &assets[0], nil
 	}
-
-	DisplayAssets(assets)
 
 	if !askUser {
 		return nil, nil
@@ -154,14 +155,14 @@ func creatAssetParam(file string) (*AssetParam, error) {
 	}, nil
 }
 
-func readFileAndPostAsset(file string, pid int) {
+func readFileAndPostAsset(file string, p *Project) {
 	assetParam, err := creatAssetParam(file)
 	if err != nil {
 		Log.Error(err)
 		return
 	}
 
-	resp, err := Do(assetEndPointForProjectId(pid), "POST", assetParam)
+	resp, err := Do(p.AssetsUrl(), "POST", assetParam)
 	if err != nil {
 		Log.Error(err)
 		return
@@ -178,10 +179,6 @@ func readFileAndPostAsset(file string, pid int) {
 	}
 }
 
-func assetEndPointForProjectId(pid int) string {
-	return fmt.Sprintf("/v1/projects/%d/assets", pid)
-}
-
 func listAssets(cmd *cli.Cmd) {
 	cmd.Spec = "[--project] | [--all]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
@@ -195,12 +192,12 @@ func listAssets(cmd *cli.Cmd) {
 		}
 
 		// first get the project, then get the pid, and make the call.
-		projectId, err := chooseProject(*name, "Which project's assets would you like to see: ")
+		p, err := chooseProject(*name, "Which project's assets would you like to see: ")
 		if err != nil {
 			Log.Error(err)
 			return
 		}
-		chooseAsset(assetEndPointForProjectId(projectId), false, "")
+		chooseAsset(p.AssetsUrl(), false, "")
 	}
 }
 
@@ -212,35 +209,19 @@ func addAsset(cmd *cli.Cmd) {
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
 		// first get the project, then get the pid, and make the call.
-		pid, err := chooseProject(*name, "Add asset to: ")
+		p, err := chooseProject(*name, "Add asset to: ")
 		if err != nil {
 			Log.Error(err)
 			return
 		}
 
 		*file = strings.TrimSpace(*file)
-		readFileAndPostAsset(*file, pid)
+		readFileAndPostAsset(*file, p)
 	}
 }
 
 func (ass *Asset) EndPoint() string {
-	return fmt.Sprintf("%s/%d", assetEndPointForProjectId(ass.ProjectId), ass.ID)
-}
-
-func (ass *Asset) Delete() {
-
-	if ass == nil {
-		return
-	}
-	confirm := ReadUserInput("Are you sure? [no]: ")
-	if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
-		resp, err := Do(ass.EndPoint(), "DELETE", nil)
-		if err != nil || resp.StatusCode != 204 {
-			Log.Error("Something went wrong. Please try again")
-		}
-	} else {
-		Log.Error("Good decision!")
-	}
+	return fmt.Sprintf("/v1/projects/%d/assets/%d", ass.ProjectId, ass.ID)
 }
 
 func removeAsset(cmd *cli.Cmd) {
@@ -256,12 +237,12 @@ func removeAsset(cmd *cli.Cmd) {
 			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ")
 		} else {
 			// first get the project, then get the pid, and make the call.
-			projectId, err2 := chooseProject(*name, "Which project's assets would you like to see: ")
+			p, err2 := chooseProject(*name, "Which project's assets would you like to see: ")
 			if err2 != nil {
 				Log.Error(err)
 				return
 			}
-			ass, err = chooseAsset(assetEndPointForProjectId(projectId), true, "Which one shall be removed: ")
+			ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be removed: ")
 		}
 
 		if err != nil {

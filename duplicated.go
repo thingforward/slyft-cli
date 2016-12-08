@@ -40,3 +40,37 @@ func extractAssetFromResponse(resp *http.Response, expectedCode int, listExpecte
 
 	return extractAssetFromBody(body)
 }
+
+func (ass *Asset) Delete() {
+	if ass == nil {
+		return
+	}
+	confirm := ReadUserInput("Are you sure? [no]: ")
+	if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
+		resp, err := Do(ass.EndPoint(), "DELETE", nil)
+		if err != nil || resp.StatusCode != http.StatusNoContent {
+			Log.Error("Something went wrong. Please try again")
+		} else {
+			Log.Error("Was successfully deleted")
+		}
+	} else {
+		Log.Error("Good decision!")
+	}
+}
+
+func (p *Project) Delete() {
+	if p == nil {
+		return
+	}
+	confirm := ReadUserInput("Are you sure? [no]: ")
+	if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
+		resp, err := Do(p.EndPoint(), "DELETE", nil)
+		if err != nil || resp.StatusCode != http.StatusNoContent {
+			Log.Error("Something went wrong. Please try again")
+		} else {
+			Log.Error("Was successfully deleted")
+		}
+	} else {
+		Log.Error("Good decision!")
+	}
+}
