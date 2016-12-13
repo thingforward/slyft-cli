@@ -27,8 +27,11 @@ func setupLogger() {
 
 func init() {
 	setupLogger()
+
+	// If Environment variable SLYFTBACKEND is present, take it. Must be a full URL
 	if BackendBaseUrl == "" {
-		Log.Fatal("Backend URL missing, please contact tech support")
+		// If not, set standard production backend
+		BackendBaseUrl = "https://api.slyft.io/"
 	}
 }
 
