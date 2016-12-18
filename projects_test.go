@@ -11,11 +11,12 @@ func TestCreateProjectParam(t *testing.T) {
 	settings := "TestSettings"
 	param := createProjectParam(name, details, settings)
 
+	now := time.Now()
 	if param.Project.Name != name ||
 		param.Project.Details != details ||
 		param.Project.Settings != settings ||
-		param.Project.CreatedAt.After(time.Now()) ||
-		param.Project.UpdatedAt.After(time.Now()) {
+		param.Project.CreatedAt.After(now) ||
+		param.Project.UpdatedAt.After(now) {
 		t.Errorf("Broken project parameter: %v", param)
 	}
 }

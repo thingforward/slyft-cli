@@ -24,9 +24,9 @@ gulp.task('default', ['build']);
 gulp.task('build', function(callback) {
   runSequence(
       'clean-bin-dist',
+      'go-get',
       'go-fmt',
       'go-vet',
-      'go-get',
       'go-build',
       'package-binary',
       'dist',
