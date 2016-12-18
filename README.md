@@ -15,6 +15,8 @@ $ npm install
 $ gulp
 ```
 
+This will create a binary for your platform in the folder `bin` and a zip archive (e.g. `slyft-cli-0.1.0-darwin.zip`) in the folder [dist](dist). You can try it by running `bin/slyft-cli` or (on Windows) `bin\slyft-cli.exe`.
+
 What's `Gulp` doing here? It fetches any missing Go dependencies, formats and vets the source, builds the binary, and runs the tests.
 
 You can also call `gulp build` (same as the default task), `gulp test` (just run the tests), `gulp watch` (watch source files and trigger builds when they change) individually if you prefer.
