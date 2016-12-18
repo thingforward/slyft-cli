@@ -25,5 +25,15 @@ _testmain.go
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# external packages folder
+# External packages folder
 vendor/
+
+# Build system specifics
+node_modules/
+bin/*
+
+# Home dir binaries
+slyft-cli
+
+# editor tempfiles
+*.swp
