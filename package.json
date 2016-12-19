@@ -1,0 +1,24 @@
+{
+  "name": "slyft-cli",
+  "version": "0.1.0",
+  "description": "command line client to slyft-server",
+  "main": "main.go",
+  "scripts": {
+    "test": "gulp test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thingforward/slyft-cli"
+  },
+  "author": "thingforward",
+  "license": "MIT",
+  "homepage": "https://github.com/thingforward/slyft-cli",
+  "devDependencies": {
+    "del": "^2.2.2",
+    "getos": "^2.8.2",
+    "gulp": "^3.9.1",
+    "gulp-zip": "^3.2.0",
+    "run-sequence": "^1.2.2",
+    "yargs": "^6.5.0"
+  }
+}
