@@ -257,6 +257,10 @@ func (p *Project) AssetsUrl() string {
 	return p.EndPoint() + "/assets"
 }
 
+func (p *Project) JobsUrl() string {
+	return p.EndPoint() + "/jobs"
+}
+
 func showProject(cmd *cli.Cmd) {
 	cmd.Spec = "[--name]"
 	name := cmd.StringOpt("name", "", "Name of the project")
@@ -296,4 +300,8 @@ func RegisterProjectRoutes(proj *cli.Cmd) {
 	proj.Command("list ls", "List all projects", listProjects)
 	proj.Command("show sh", "Show an existing project", showProject)
 	proj.Command("delete d", "Delete an existing project", deleteProject)
+
+	proj.Command("build b", "build a project", buildProject)
+	proj.Command("validate v", "validate a project", validateProject)
+	proj.Command("status st", "job status of a projct", jobStatusProject)
 }

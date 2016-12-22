@@ -1,7 +1,9 @@
 package main
 
 import (
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/jawher/mow.cli"
 	"github.com/op/go-logging"
@@ -26,6 +28,9 @@ func setupLogger() {
 }
 
 func init() {
+	// https://www.reddit.com/r/golang/comments/45mzie/dont_use_gos_default_http_client/
+	http.DefaultClient.Timeout = 10 * time.Second
+
 	setupLogger()
 
 	// If Environment variable SLYFTBACKEND is present, take it. Must be a full URL

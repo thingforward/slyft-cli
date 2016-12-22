@@ -41,6 +41,23 @@ func extractAssetFromResponse(resp *http.Response, expectedCode int, listExpecte
 	return extractAssetFromBody(body)
 }
 
+func extractJobFromResponse(resp *http.Response, expectedCode int, listExpected bool) ([]Job, error) {
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != expectedCode {
+		return nil, errors.New(fmt.Sprintf("Failed with the wrong code: %v. (expected %v)\n", resp.StatusCode, expectedCode))
+	}
+
+	if listExpected {
+		return extractJobsFromBody(body)
+	}
+
+	return extractJobFromBody(body)
+}
+
 func (ass *Asset) Delete() {
 	if ass == nil {
 		return
