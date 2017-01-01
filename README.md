@@ -8,33 +8,49 @@ $ ./slyft-cli
 ```
 
 ## Build slyft-cli
-Before you begin, make sure you have Golang and Node.js installed, and clone the repo to `$GOPATH/src/github.com/thingforward/slyft-cli`. That done, you can build `slyft-cli` as follows:
+Before you begin, make sure you have Golang and Node.js installed. For the Go sources to build successfully, you also need $GOPATH and $GOBIN to be set (for this example, $GOPATH is set to ~/golang):
+```
+ $ cd
+~$ mkdir -p golang/bin
+~$ export GOPATH=~/golang
+~$ export GOBIN=$GOPATH/bin
+```
+
+Then clone the repo to `$GOPATH/src/github.com/thingforward/slyft-cli`. That done, you can build `slyft-cli` as follows:
 ```
 $ sudo npm install --global gulp-cli
 $ npm install 
 $ gulp
 ```
 
-This will create a binary for your platform in the folder `bin` and a zip archive (e.g. `slyft-cli-0.1.0-darwin.zip`) in the folder [dist](dist). You can try it by running `bin/slyft-cli` or (on Windows) `bin\slyft-cli.exe`.
+This will create a binary for your platform in the folder `bin` and a zipped archive (e.g. `dist/slyft-cli-0.1.0-darwin_1bb262da570bff653a8d8be9e785fb40.zip`) in the folder [dist](dist). You can try it by running `bin/slyft-cli` or (on Windows) `bin\slyft-cli.exe`.
 
 What's `Gulp` doing here? It fetches any missing Go dependencies, formats and vets the source, builds the binary, and runs the tests.
 
 You can also call `gulp build` (same as the default task), `gulp test` (just run the tests), `gulp watch` (watch source files and trigger builds when they change) individually if you prefer.
 
-
-### OSX
-
-Make sure to have GOPATH and GOBIN set accordingly for gulp to succeed. In case of errors, try
-
+If you find that `gulp` is not recognised (or you had to skip the first step because `sudo` is not available), you can call the local copy of `gulp` installed by `npm` directly:
 ```
-$ mkdir $GOPATH/bin
-$ export GOBIN=$GOPATH/bin
-$ gulp
+$ node node_modules/gulp/bin/gulp.js
 ```
 
 ### Ubuntu 
 
-Note for Ubuntu users: due to a naming conflict where `nodejs` is installed but the package expects `node` to be present, it's quickest to use `nodejs node_modules/gulp/bin/gulp.js` instead of `gulp`.
+There is a Debian naming conflict where the package manager installs `nodejs` but `gulp` expects the executable to be called `node` (that being the standard name of the Node.js binary).
 
-# License
+To solve this problem, either install `nodejs-legacy` (which adds a symlink from `/usr/bin/nodejs` to `/usr/bin/node`) or call the local gulp instance directly using `nodejs` not `node`:
+```
+$ nodejs node_modules/gulp/bin/gulp.js
+```
+
+### Windows
+On Windows, be sure to build the program from Git Bash or a similar, unixy command prompt. `gofmt` in particular expects tools such as `diff` to be available.
+
+When submitting pull requests, consider disabling Git's auto-detection for line endings:
+```
+git config --global core.autocrlf false
+```
+Avoiding `crlf` is important as `gofmt` standardises on Unix line endings.
+
+## License
 (C) 2016 Digital Incubation and Growth GmbH All Rights Reserved
