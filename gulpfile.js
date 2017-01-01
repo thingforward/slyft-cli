@@ -5,7 +5,8 @@ var gulp  = require('gulp'),
     argv = require('yargs').argv,
     exec = require('child_process').exec,
     os = require('os'),
-    getos = require('getos');
+    getos = require('getos'),
+    md5 = require('gulp-md5');
 
 var pkg = require('./package.json');
 var platform = os.platform();
@@ -65,7 +66,7 @@ gulp.task('go-test', function(callback) {
 //echo required changes, but don't break build
 //or modify in-place 
 gulp.task('go-fmt', function(callback) {
-  exec('gofmt -d *.go', function(err, stdout, stderr) {
+  exec('gofmt -d .', function(err, stdout, stderr) {
     console.log(stdout);
     console.log(stderr);
     callback(err);
@@ -88,7 +89,11 @@ gulp.task('clean-bin-home', function() {
 
 //keep only latest version in dist for now - it's not a binrepo
 gulp.task('clean-bin-dist', function() {
-  return del.sync(['./dist/' + pkg.name + '-*-' + platform + '.zip', './bin/**/*'], { force: true });
+  return del.sync([
+    './dist/' + pkg.name + '-*-' + platform + '_*.zip', //with MD5
+    './dist/' + pkg.name + '-*-' + platform + '.zip', //without MD5
+    './bin/**/*' //original build system
+  ], { force: true });
 });
 
 //move binary to bin, but don't keep it - it's in .gitignore; only *.zips are kept
@@ -101,6 +106,7 @@ gulp.task('package-binary', function() {
 gulp.task('dist', function() {
   return gulp.src('./bin/**/*', { base: './bin' })
   .pipe(zip(pkg.name + '-' + pkg.version + '-' + platform + '.zip'))
+  .pipe(md5())
   .pipe(gulp.dest('./dist'));
 });
 
