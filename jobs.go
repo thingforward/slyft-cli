@@ -144,7 +144,7 @@ func creatJobParam(kind string, p *Project) *JobParam {
 }
 
 func postNewJOB(kind, name string) {
-	p, err := chooseProject(name, fmt.Sprint("%s project: ", kind))
+	p, err := chooseProject(name, fmt.Sprintf("%s project: ", kind))
 	if err != nil {
 		Log.Error(err)
 		return
