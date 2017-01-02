@@ -38,3 +38,6 @@ slyft-cli
 # editor tempfiles
 *.swp
 Makefile
+cli
+npm-debug.log
+dist/*
