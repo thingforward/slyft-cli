@@ -8,7 +8,7 @@ ENV GOBIN=$GOPATH/bin
 RUN mkdir $GOPATH $GOBIN
 RUN apt-get update -y -q \
 	&& apt-get upgrade -y -q \
-	&& apt-get install -y -q golang nodejs npm git zip
+	&& apt-get install -y -q golang nodejs npm git zip \
 	&& cd /slyft-cli-build && git clone https://github.com/thingforward/slyft-cli.git \
 	&& cd slyft-cli \
 	&& npm install \
