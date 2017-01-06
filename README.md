@@ -43,6 +43,24 @@ To solve this problem, either install `nodejs-legacy` (which adds a symlink from
 $ nodejs node_modules/gulp/bin/gulp.js
 ```
 
+### Docker
+
+Use the `Dockerfile` to build the slyft client, use it from within a container, or copy it over to the host:
+
+```
+$ docker build -t slyft-cli .
+(...)
+
+$ docker run slyft-cli
+
+Usage: Slyft [OPTIONS] COMMAND [arg...]
+(...)
+
+$ docker run -v $PWD:/tmpdist slyft-cli /bin/sh -c 'cp *.zip /tmpdist'
+$ ls *.zip
+slyft-cli-0.1.1-debian-8.6_d80891d37976c3106093b391445cec40.zip
+```
+
 ### Windows
 On Windows, be sure to build the program from Git Bash or a similar, unixy command prompt. `gofmt` in particular expects tools such as `diff` to be available.
 
