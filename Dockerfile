@@ -16,7 +16,8 @@ RUN apt-get update -y -q \
 	&& mv dist/* /slyft-cli/ \
 	&& mv bin/* /slyft-cli/ \
 	&& rm -fr /slyft-cli-build \
-    	&& apt-get clean -y -q \
+    	&& apt-get -y -q purge golang nodejs npm git \
+	&& apt-get clean -y -q \
     	&& apt-get autoclean -y -q \
     	&& apt-get autoremove -y -q \
     	&& rm -rf /usr/share/locale/* \
