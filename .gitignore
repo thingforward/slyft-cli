@@ -41,3 +41,4 @@ Makefile
 cli
 npm-debug.log
 dist/*
+.gopath
