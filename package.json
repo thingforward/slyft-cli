@@ -1,6 +1,6 @@
 {
-  "name": "slyft-cli",
-  "version": "0.1.1",
+  "name": "slyft",
+  "version": "0.1.2",
   "description": "command line client to slyft-server",
   "main": "main.go",
   "scripts": {
@@ -10,8 +10,8 @@
     "type": "git",
     "url": "https://github.com/thingforward/slyft-cli"
   },
-  "author": "thingforward",
-  "license": "MIT",
+  "author": "thingforward.io",
+  "license": "Apache2",
   "homepage": "https://github.com/thingforward/slyft-cli",
   "devDependencies": {
     "del": "^2.2.2",
