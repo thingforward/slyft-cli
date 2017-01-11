@@ -14,13 +14,20 @@ import (
 )
 
 type Job struct {
-	ID          int       `json:"id"`
-	Kind        string    `json:"kind"`
-	Status      string    `json:"status"`
-	ProjectId   int       `json:"project_id"`
-	ProjectName string    `json:"project_name"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          int        `json:"id"`
+	Kind        string     `json:"kind"`
+	Status      string     `json:"status"`
+	Results     JobResults `json:"results"`
+	ProjectId   int        `json:"project_id"`
+	ProjectName string     `json:"project_name"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
+type JobResults struct {
+	ResultMessage string   `json:"resultMessage"`
+	ResultStatus  int      `json:"resultStatus"`
+	ResultAssets  []string `json:"resultAssets"`
 }
 
 func (j *Job) Display() { // String?
@@ -36,6 +43,11 @@ func (j *Job) Display() { // String?
 	data = append(data, []string{"ProjectName", j.ProjectName})
 	data = append(data, []string{"CreatedAt", j.CreatedAt.String()})
 	data = append(data, []string{"UpdatedAt", j.UpdatedAt.String()})
+	data = append(data, []string{"ResultMessage", j.Results.ResultMessage})
+	data = append(data, []string{"ResultStatus", fmt.Sprintf("%d", j.Results.ResultStatus)})
+	for index, asset := range j.Results.ResultAssets {
+		data = append(data, []string{fmt.Sprintf("ResultAssets[%d]", index), asset})
+	}
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())
@@ -186,7 +198,12 @@ func jobStatusProject(cmd *cli.Cmd) {
 			Log.Error(err)
 			return
 		}
-		chooseJob(p.JobsUrl(), false, "")
+		job, err := chooseJob(p.JobsUrl(), true, "Select a job id to show more details: ")
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+		job.Display()
 	}
 }
 
