@@ -32,10 +32,6 @@ func (sa SlyftAuth) String() string {
 
 type SlyftRC struct {
 	Auth     SlyftAuth
-	More     string
-	Settings string
-	To       string
-	Come     string
 }
 
 func (sr SlyftRC) String() string {
@@ -183,7 +179,7 @@ func DeleteUser() {
 }
 
 func RegisterUserRoutes(user *cli.Cmd) {
-	user.Command("register r", "Register ixxx yourself", func(cmd *cli.Cmd) { cmd.Action = RegisterUser })
+	user.Command("register r", "Register yourself", func(cmd *cli.Cmd) { cmd.Action = RegisterUser })
 	user.Command("login l", "Login with your credentials", func(cmd *cli.Cmd) { cmd.Action = LogUserIn })
 	user.Command("logout signout", "Log out from your session", func(cmd *cli.Cmd) { cmd.Action = LogUserOut })
 	user.Command("destroy", "Delete your account", func(cmd *cli.Cmd) { cmd.Action = DeleteUser })

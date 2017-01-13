@@ -60,7 +60,7 @@ func writeAuthToConfig(sa *SlyftAuth) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(defaultConfigFile(), newConfig, 0644)
+	err = ioutil.WriteFile(defaultConfigFile(), newConfig, 0640)
 	if err != nil {
 		Log.Error("Failure to write config file: " + defaultConfigFile())
 		return err
