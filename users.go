@@ -31,7 +31,7 @@ func (sa SlyftAuth) String() string {
 }
 
 type SlyftRC struct {
-	Auth     SlyftAuth
+	Auth SlyftAuth
 }
 
 func (sr SlyftRC) String() string {
@@ -64,12 +64,12 @@ func readCredentials(confirm bool) (string, string, string) {
 	fmt.Print("Enter Email: ")
 	username, _ := reader.ReadString('\n')
 
-	password := readSecret("Enter Password: ")
+	password := readSecret("Enter Password (min. 6 characters): ")
 	if !confirm {
 		return strings.TrimSpace(username), strings.TrimSpace(password), ""
 	}
 
-	passwordConfirmation := readSecret("Confirm Password: ")
+	passwordConfirmation := readSecret("Please confirm Password: ")
 	return strings.TrimSpace(username), strings.TrimSpace(password), strings.TrimSpace(passwordConfirmation)
 }
 
@@ -119,11 +119,19 @@ func authenticateUser(endpoint string, register bool) error {
 }
 
 func RegisterUser() {
+	fmt.Println("\nThank you for your interest in Slyft! Please provide us your email address and")
+	fmt.Println("a password (min. 6 characters). Please make sure you have access to the email account given")
+	fmt.Println("as we will send you a confirmation email to this address.")
+	fmt.Println()
 	err := authenticateUser("/auth", true)
 	if err != nil {
-		Log.Error("Sorry, registration failed")
+		Log.Error("We're very sorry, but your registration failed. You may contact us at `info@slyft.io` for further details.")
 	} else {
-		fmt.Println("Successfully registered, have fun...")
+		fmt.Println("\nRegistration successful. We've sent you a confirmation email to the email address")
+		fmt.Println("you given for this registration process. Please have a look at your inbox for")
+		fmt.Println("a new message from `info@slyft.io` and follow the instructions presented there")
+		fmt.Println("to activate your account.")
+		fmt.Println()
 	}
 }
 
