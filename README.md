@@ -1,13 +1,16 @@
-# slyft-cli
+# slyft
 command line client to slyft-server
 
-## Run slyft-cli
-To run `slyft-cli`, fetch the appropriate zip file from the folder [dist](dist), extract and run:
+## Run slyft
+To run `slyft`, fetch the appropriate zip file from the folder [dist](dist), extract and run:
 ```
-$ ./slyft-cli
+$ ./slyft
 ```
 
-## Build slyft-cli
+For a comprehensive documentation, please see www.slyft.io/docs
+
+## Build slyft
+
 Before you begin, make sure you have Golang and Node.js installed. For the Go sources to build successfully, you also need $GOPATH and $GOBIN to be set (for this example, $GOPATH is set to ~/golang):
 ```
  $ cd
@@ -16,14 +19,15 @@ Before you begin, make sure you have Golang and Node.js installed. For the Go so
 ~$ export GOBIN=$GOPATH/bin
 ```
 
-Then clone the repo to `$GOPATH/src/github.com/thingforward/slyft-cli`. That done, you can build `slyft-cli` as follows:
+Then clone the repo to `$GOPATH/src/github.com/thingforward/slyft-cli`. That done, you can build `slyft` as follows:
+
 ```
 $ sudo npm install --global gulp-cli
 $ npm install 
 $ gulp
 ```
 
-This will create a binary for your platform in the folder `bin` and a zipped archive (e.g. `dist/slyft-cli-0.1.0-darwin_1bb262da570bff653a8d8be9e785fb40.zip`) in the folder [dist](dist). You can try it by running `bin/slyft-cli` or (on Windows) `bin\slyft-cli.exe`.
+This will create a binary for your platform in the folder `bin` and a zipped archive (e.g. `dist/slyft-0.1.0-darwin_1bb262da570bff653a8d8be9e785fb40.zip`) in the folder [dist](dist). You can try it by running `bin/slyft` or (on Windows) `bin\slyft.exe`.
 
 What's `Gulp` doing here? It fetches any missing Go dependencies, formats and vets the source, builds the binary, and runs the tests.
 
@@ -58,7 +62,7 @@ Usage: Slyft [OPTIONS] COMMAND [arg...]
 
 $ docker run -v $PWD:/tmpdist slyft-cli /bin/sh -c 'cp *.zip /tmpdist'
 $ ls *.zip
-slyft-cli-0.1.1-debian-8.6_d80891d37976c3106093b391445cec40.zip
+slyft-0.1.1-debian-8.6_d80891d37976c3106093b391445cec40.zip
 ```
 
 ### Windows
@@ -71,4 +75,7 @@ git config --global core.autocrlf false
 Avoiding `crlf` is important as `gofmt` standardises on Unix line endings.
 
 ## License
-(C) 2016 Digital Incubation and Growth GmbH All Rights Reserved
+
+(C) 2016 Digital Incubation and Growth GmbH
+Licensed under the Apache License, Version 2.0
+See LICENSE for details
