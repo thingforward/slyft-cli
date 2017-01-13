@@ -48,6 +48,11 @@ type Credentials struct {
 	PasswordConfirmation string `json:"password_confirmation"`
 }
 
+type Terms struct {
+	Url       string `json:"url"`
+	StartedAt string `json:"started_at"`
+}
+
 func readSecret(ask string) string {
 	fmt.Print(ask)
 	byteSecret, err := terminal.ReadPassword(int(syscall.Stdin))
@@ -56,6 +61,93 @@ func readSecret(ask string) string {
 		Log.Critical("Reading secrect failed: " + err.Error())
 	}
 	return string(byteSecret)
+}
+
+func termsUri() (string, error) {
+	// get T&C JSON from endpoint to get the URL to the latest terms document
+	resp, err := Do("/terms", "GET", nil)
+	defer resp.Body.Close()
+	if err != nil {
+		return "", err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	t := &Terms{}
+	if err := json.Unmarshal(body, &t); err != nil {
+		return "", err
+	}
+	return t.Url, nil
+}
+
+func getTerms() (string, error) {
+	// get the terms content as string from the referenced terms document
+	termsUri, err := termsUri()
+	if err != nil {
+		return "", err
+	}
+	response, err := http.Get(termsUri)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+	responseString := string(responseData)
+	return responseString, nil
+}
+
+func displayTermsAndConditions() error {
+	// display terms file contents
+	terms, err := getTerms()
+	if err != nil {
+		return err
+	}
+	fmt.Print(terms)
+	return nil
+}
+
+func acceptTermsAndConditions() (bool, error) {
+	/*
+		- ask user for acceptance
+		- return boolean true/false based on user input
+	*/
+	err := displayTermsAndConditions()
+	if err != nil {
+		return false, nil
+	}
+	accept := askForConfirmation("Do you accept the Terms and Conditions?")
+	if accept == false {
+		return false, nil
+	}
+	//TODO: update user object in API to store the acceptance state
+
+	return accept, nil
+}
+
+func askForConfirmation(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Printf("%s [y/n]: ", s)
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			Log.Error(err)
+			return false
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
+		}
+	}
 }
 
 func readCredentials(confirm bool) (string, string, string) {
@@ -93,6 +185,13 @@ func extractAuthFromHeader(hdr *http.Header) SlyftAuth {
 func authenticateUser(endpoint string, register bool) error {
 	url := ServerURL(endpoint)
 	creds := getCredentials(register)
+	// if the user wants to register, show T&C to the user, and ask for acceptance
+	if register {
+		accept, err := acceptTermsAndConditions()
+		if !accept {
+			return errors.New(fmt.Sprintf("You need to accept the terms first. %v\n", err))
+		}
+	}
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(creds)
 	resp, err := http.Post(url, "application/json; charset=utf-8", b)
