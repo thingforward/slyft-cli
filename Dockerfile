@@ -25,4 +25,4 @@ RUN apt-get update -y -q \
     	&& rm -rf /var/lib/apt/lists/* \
     	&& rm -rf /usr/share/doc/*
 
-CMD [ "/slyft-cli/slyft" ]
+CMD [ "/slyft-cli/slyft-cli" ]

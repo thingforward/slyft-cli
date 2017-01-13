@@ -266,7 +266,7 @@ func showProject(cmd *cli.Cmd) {
 	name := cmd.StringOpt("name", "", "Name of the project")
 
 	cmd.Action = func() {
-		p, err := chooseProject(*name, "Which project needs to be displayed in detail: ")
+		p, err := chooseProject(*name, "Which project needs to be diplayed in detail: ")
 		if err == nil {
 			resp, err := Do(p.EndPoint(), "GET", nil)
 			defer resp.Body.Close()
@@ -285,7 +285,7 @@ func deleteProject(cmd *cli.Cmd) {
 	name := cmd.StringOpt("name", "", "Name (or part of it) of the project")
 
 	cmd.Action = func() {
-		p, err := chooseProject(*name, "Please choose the project to be deleted: ")
+		p, err := chooseProject(*name, "Which project needs to be diplayed in detail: ")
 		if err != nil {
 			Log.Error(err)
 			return
@@ -301,7 +301,7 @@ func RegisterProjectRoutes(proj *cli.Cmd) {
 	proj.Command("show sh", "Show an existing project", showProject)
 	proj.Command("delete d", "Delete an existing project", deleteProject)
 
-	proj.Command("build b", "Build a project", buildProject)
-	proj.Command("validate v", "Validate a project", validateProject)
-	proj.Command("status st", "Show job status of a projct", jobStatusProject)
+	proj.Command("build b", "build a project", buildProject)
+	proj.Command("validate v", "validate a project", validateProject)
+	proj.Command("status st", "job status of a projct", jobStatusProject)
 }

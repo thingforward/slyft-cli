@@ -10,7 +10,6 @@ var gulp  = require('gulp'),
 
 var pkg = require('./package.json');
 var platform = os.platform();
-var arch = os.arch();
 if (platform === "linux") {
   var obj = getos(function(e, os) {
     if (!e) {
@@ -48,7 +47,7 @@ gulp.task('go-get', function(callback) {
 
 //build but don't install - the end product lives in `dist`
 gulp.task('go-build', function(callback) {
-  exec('go build -o bin/slyft .', function(err, stdout, stderr) {
+  exec('go build .', function(err, stdout, stderr) {
     console.log(stdout);
     console.log(stderr);
     callback(err);
@@ -85,7 +84,7 @@ gulp.task('go-vet', function(callback) {
 
 //at the end, remove the binary that's created by `go build`
 gulp.task('clean-bin-home', function() {
-  return del.sync(['./slyft', './slyft.exe'], { force: true });
+  return del.sync(['./slyft-cli', './slyft-cli.exe'], { force: true });
 });
 
 //keep only latest version in dist for now - it's not a binrepo
@@ -100,13 +99,13 @@ gulp.task('clean-bin-dist', function() {
 //move binary to bin, but don't keep it - it's in .gitignore; only *.zips are kept
 //whatever the platform, the user calls slyft, not slyft.mac etc.
 gulp.task('package-binary', function() {
-  return gulp.src(['./slyft', './slyft.exe'], { base: '.' })
+  return gulp.src(['./slyft-cli', './slyft-cli.exe'], { base: '.' })
   .pipe(gulp.dest('bin'))
 });
 
 gulp.task('dist', function() {
   return gulp.src('./bin/**/*', { base: './bin' })
-  .pipe(zip(pkg.name + '-' + pkg.version + '-' + platform + '-' + arch + '.zip'))
+  .pipe(zip(pkg.name + '-' + pkg.version + '-' + platform + '.zip'))
   .pipe(md5())
   .pipe(gulp.dest('./dist'));
 });
