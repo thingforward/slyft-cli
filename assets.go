@@ -202,12 +202,17 @@ func listAssets(cmd *cli.Cmd) {
 }
 
 func addAsset(cmd *cli.Cmd) {
-	cmd.Spec = "--project --file"
+	cmd.Spec = "[--project] --file"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
 	file := cmd.StringOpt("file f", "", "path to the file which you want as an asset")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
+
+		if *name == "" {
+			*name, _ = ReadProjectLock()
+		}
+
 		// first get the project, then get the pid, and make the call.
 		p, err := chooseProject(*name, "Add asset to: ")
 		if err != nil {
@@ -231,6 +236,10 @@ func removeAsset(cmd *cli.Cmd) {
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
+		if *name == "" {
+			*name, _ = ReadProjectLock()
+		}
+
 		var ass *Asset
 		var err error
 		if *all || *name == "" {

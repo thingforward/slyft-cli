@@ -174,11 +174,14 @@ func createProject(cmd *cli.Cmd) {
 }
 
 func settingsProject(cmd *cli.Cmd) {
-	cmd.Spec = "--name KEY VALUE"
+	cmd.Spec = "[--name] KEY VALUE"
 	name := cmd.StringOpt("name", "", "Name for the project")
 	key := cmd.StringArg("KEY", "", "Name of the setting")
 	value := cmd.StringArg("VALUE", "", "Value of the setting")
 	cmd.Action = func() {
+		if *name == "" {
+			*name, _ = ReadProjectLock()
+		}
 		p, err := chooseProject(*name, "Which project needs to be updated: ")
 		if err == nil {
 			resp, err := Do(p.EndPoint(), "PUT", createProjectParam("", "", fmt.Sprintf(`{"%s": "%s"}`, *key, *value)))
