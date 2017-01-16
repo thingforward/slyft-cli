@@ -22,7 +22,6 @@ type Asset struct {
 	ProjectName string    `json:"project_name"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	Url         string    `json:"url"`
 }
 
 func (a *Asset) Display() { // String?
@@ -36,7 +35,6 @@ func (a *Asset) Display() { // String?
 	data = append(data, []string{"ProjectName", a.ProjectName})
 	data = append(data, []string{"CreatedAt", a.CreatedAt.String()})
 	data = append(data, []string{"UpdatedAt", a.UpdatedAt.String()})
-	data = append(data, []string{"Url", a.Url})
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())
@@ -62,7 +60,7 @@ func DisplayAssets(assets []Asset) {
 	var data [][]string
 	for i := range assets {
 		a := assets[i]
-		data = append(data, []string{fmt.Sprintf("%d", i+1), a.Name, a.ProjectName, a.Url})
+		data = append(data, []string{fmt.Sprintf("%d", i+1), a.Name, a.ProjectName})
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
