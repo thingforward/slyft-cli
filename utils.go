@@ -104,3 +104,25 @@ func TerminalWidth() int {
 
 	return width
 }
+
+func TerminalHeight() int {
+	defaultWidth := 24
+
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	out, err := cmd.Output()
+	if err != nil {
+		return defaultWidth
+	}
+	re := regexp.MustCompile("[0-9]+")
+	all := re.FindAllString(string(out), -1)
+	if len(all) < 2 {
+		return defaultWidth
+	}
+	height, err := strconv.Atoi(all[0])
+	if err != nil {
+		return defaultWidth
+	}
+
+	return height
+}
