@@ -106,7 +106,9 @@ func displayTermsAndConditions() error {
 	if err != nil {
 		return err
 	}
+	fmt.Print("\n-------------------------------------------------\n")
 	fmt.Print(terms)
+	fmt.Print("-------------------------------------------------\n")
 	return nil
 }
 
@@ -187,6 +189,11 @@ func authenticateUser(endpoint string, register bool) error {
 	creds := getCredentials(register)
 	// if the user wants to register, show T&C to the user, and ask for acceptance
 	if register {
+		fmt.Print("\nFor a successful registration, we kindly ask you to read and accept our\n")
+		fmt.Print("Terms and Conditions. Please press [ENTER] to view and accept. >")
+		reader := bufio.NewReader(os.Stdin)
+		_, err := reader.ReadString('\n')
+
 		accept, err := acceptTermsAndConditions()
 		if !accept {
 			return errors.New(fmt.Sprintf("You need to accept the terms first. %v\n", err))
@@ -210,7 +217,20 @@ func authenticateUser(endpoint string, register bool) error {
 	// handle the error
 	body, err := ioutil.ReadAll(resp.Body)
 	if err == nil {
-		Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
+		//Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
+
+		fmt.Print("\nWe're sorry, but your registration failed due to the following errors:\n")
+		var f interface{}
+		err := json.Unmarshal(body, &f)
+		if err == nil {
+			m := f.(map[string]interface{})
+			e := (m["errors"]).(map[string]interface{})
+			fm := (e["full_messages"]).([]interface{})
+			for _, msg := range fm {
+				fmt.Printf("* %s\n", msg)
+			}
+
+		}
 		return errors.New(fmt.Sprintf("Server returned failure: %v\nBye", resp.Status))
 	}
 
@@ -224,7 +244,7 @@ func RegisterUser() {
 	fmt.Println()
 	err := authenticateUser("/auth", true)
 	if err != nil {
-		Log.Error("We're very sorry, but your registration failed. You may contact us at `info@slyft.io` for further details.")
+		Log.Error("We're very sorry, but your registration failed.")
 	} else {
 		fmt.Println("\nRegistration successful. We've sent you a confirmation email to the email address")
 		fmt.Println("you given for this registration process. Please have a look at your inbox for")
