@@ -217,19 +217,21 @@ func authenticateUser(endpoint string, register bool) error {
 	// handle the error
 	body, err := ioutil.ReadAll(resp.Body)
 	if err == nil {
-		//Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
+		if register {
+			fmt.Print("\nWe're sorry, but your registration failed due to the following errors:\n")
+			var f interface{}
+			err := json.Unmarshal(body, &f)
+			if err == nil {
+				m := f.(map[string]interface{})
+				e := (m["errors"]).(map[string]interface{})
+				fm := (e["full_messages"]).([]interface{})
+				for _, msg := range fm {
+					fmt.Printf("* %s\n", msg)
+				}
 
-		fmt.Print("\nWe're sorry, but your registration failed due to the following errors:\n")
-		var f interface{}
-		err := json.Unmarshal(body, &f)
-		if err == nil {
-			m := f.(map[string]interface{})
-			e := (m["errors"]).(map[string]interface{})
-			fm := (e["full_messages"]).([]interface{})
-			for _, msg := range fm {
-				fmt.Printf("* %s\n", msg)
 			}
-
+		} else {
+			Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
 		}
 		return errors.New(fmt.Sprintf("Server returned failure: %v\nBye", resp.Status))
 	}
@@ -308,6 +310,6 @@ func DeleteUser() {
 func RegisterUserRoutes(user *cli.Cmd) {
 	user.Command("register r", "Register yourself", func(cmd *cli.Cmd) { cmd.Action = RegisterUser })
 	user.Command("login l", "Login with your credentials", func(cmd *cli.Cmd) { cmd.Action = LogUserIn })
-	user.Command("logout signout", "Log out from your session", func(cmd *cli.Cmd) { cmd.Action = LogUserOut })
-	user.Command("destroy", "Delete your account", func(cmd *cli.Cmd) { cmd.Action = DeleteUser })
+	user.Command("logout", "Log out from your session", func(cmd *cli.Cmd) { cmd.Action = LogUserOut })
+	user.Command("delete", "Delete your account", func(cmd *cli.Cmd) { cmd.Action = DeleteUser })
 }
