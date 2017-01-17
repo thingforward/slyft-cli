@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/jawher/mow.cli"
 	"golang.org/x/crypto/ssh/terminal"
@@ -43,14 +44,20 @@ func (sr SlyftRC) String() string {
 }
 
 type Credentials struct {
-	Email                string `json:"email"`
-	Password             string `json:"password"`
-	PasswordConfirmation string `json:"password_confirmation"`
+	Email                string          `json:"email"`
+	Password             string          `json:"password"`
+	PasswordConfirmation string          `json:"password_confirmation"`
+	TermsAcceptance      TermsAcceptance `json:"terms"`
 }
 
 type Terms struct {
 	Url       string `json:"url"`
 	StartedAt string `json:"started_at"`
+}
+
+type TermsAcceptance struct {
+	Accepted  bool   `json:"accepted"`
+	Timestamp string `json:"timestamp"`
 }
 
 func readSecret(ask string) string {
@@ -125,8 +132,6 @@ func acceptTermsAndConditions() (bool, error) {
 	if accept == false {
 		return false, nil
 	}
-	//TODO: update user object in API to store the acceptance state
-
 	return accept, nil
 }
 
@@ -198,6 +203,8 @@ func authenticateUser(endpoint string, register bool) error {
 		if !accept {
 			return errors.New(fmt.Sprintf("You need to accept the terms first. %v\n", err))
 		}
+		creds.TermsAcceptance.Accepted = accept
+		creds.TermsAcceptance.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05-0700")
 	}
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(creds)
