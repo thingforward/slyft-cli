@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -140,6 +141,10 @@ type AssetParam struct {
 	Asset AssetPost `json:"asset"`
 }
 
+type AssetNameString struct {
+	AssetNameString string `json:"asset_name"`
+}
+
 func creatAssetParam(file string) (*AssetParam, error) {
 	// read the file content (use ioutil)
 	bytes, err := ioutil.ReadFile(file)
@@ -176,6 +181,34 @@ func readFileAndPostAsset(file string, p *Project) {
 
 	if len(assets) == 1 {
 		assets[0].Display()
+	}
+}
+
+func getAssetAndSaveToFile(file string, p *Project) {
+	resp, err := Do(p.AssetstoreUrl(), "GET", &AssetNameString{file})
+	if err != nil {
+		Log.Error(err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 {
+
+		// stream body to file of this name
+		out, err := os.Create(file)
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+		defer out.Close()
+		_, err = io.Copy(out, resp.Body)
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+		fmt.Printf("Downloaded %s\n", file)
+	} else {
+		Log.Error("Error downloading asset")
 	}
 }
 
@@ -220,6 +253,25 @@ func addAsset(cmd *cli.Cmd) {
 	}
 }
 
+func getAsset(cmd *cli.Cmd) {
+	cmd.Spec = "--project --file"
+	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	file := cmd.StringOpt("file f", "", "name of the asset to be downloaded")
+
+	cmd.Action = func() {
+		*name = strings.TrimSpace(*name)
+		// first get the project, then get the pid, and make the call.
+		p, err := chooseProject(*name, "Download asset from: ")
+		if err != nil {
+			Log.Error(err)
+			return
+		}
+
+		*file = strings.TrimSpace(*file)
+		getAssetAndSaveToFile(*file, p)
+	}
+}
+
 func (ass *Asset) EndPoint() string {
 	return fmt.Sprintf("/v1/projects/%d/assets/%d", ass.ProjectId, ass.ID)
 }
@@ -257,5 +309,6 @@ func removeAsset(cmd *cli.Cmd) {
 func RegisterAssetRoutes(proj *cli.Cmd) {
 	proj.Command("add a", "Add asset to a project", addAsset)
 	proj.Command("list ls", "List your assets", listAssets)
+	proj.Command("get g", "Download a single asset", getAsset)
 	proj.Command("delete d", "Remove and asset from a project", removeAsset)
 }

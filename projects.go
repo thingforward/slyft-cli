@@ -257,6 +257,10 @@ func (p *Project) AssetsUrl() string {
 	return p.EndPoint() + "/assets"
 }
 
+func (p *Project) AssetstoreUrl() string {
+	return p.EndPoint() + "/assetstore"
+}
+
 func (p *Project) JobsUrl() string {
 	return p.EndPoint() + "/jobs"
 }
