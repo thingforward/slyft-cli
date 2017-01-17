@@ -147,6 +147,11 @@ func creatAssetParam(file string) (*AssetParam, error) {
 		return nil, err
 	}
 
+	err = preflightAsset(&bytes, file)
+	if err != nil {
+		return nil, err
+	}
+
 	return &AssetParam{
 		AssetPost{
 			Name:  file,
