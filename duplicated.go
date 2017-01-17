@@ -69,10 +69,10 @@ func (ass *Asset) Delete() {
 		if err != nil || resp.StatusCode != http.StatusNoContent {
 			Log.Error("Something went wrong. Please try again")
 		} else {
-			Log.Error("Was successfully deleted")
+			fmt.Println("Was successfully deleted")
 		}
 	} else {
-		Log.Error("Good decision!")
+		fmt.Println("Good decision!")
 	}
 }
 
@@ -90,6 +90,6 @@ func (p *Project) Delete() {
 			Log.Error("Was successfully deleted")
 		}
 	} else {
-		Log.Error("Good decision!")
+		fmt.Println("Good decision!")
 	}
 }

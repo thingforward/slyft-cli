@@ -186,7 +186,7 @@ func settingsProject(cmd *cli.Cmd) {
 			if err != nil || resp.StatusCode != http.StatusNoContent {
 				Log.Error("Something went wrong. Please try again")
 			} else {
-				Log.Error("Was successfully updated")
+				fmt.Println("Was successfully updated")
 			}
 			return
 		}
