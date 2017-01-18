@@ -20,9 +20,9 @@ type Asset struct {
 	Name        string    `json:"name"`
 	ProjectId   int       `json:"project_id"`
 	ProjectName string    `json:"project_name"`
+	Origin      string    `json:"origin"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	Url         string    `json:"url"`
 }
 
 func (a *Asset) Display() { // String?
@@ -34,9 +34,9 @@ func (a *Asset) Display() { // String?
 	data = append(data, []string{"Name", a.Name})
 	data = append(data, []string{"ProjectId", fmt.Sprintf("%d", a.ProjectId)})
 	data = append(data, []string{"ProjectName", a.ProjectName})
+	data = append(data, []string{"Origin", a.Origin})
 	data = append(data, []string{"CreatedAt", a.CreatedAt.String()})
 	data = append(data, []string{"UpdatedAt", a.UpdatedAt.String()})
-	data = append(data, []string{"Url", a.Url})
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())
@@ -62,12 +62,12 @@ func DisplayAssets(assets []Asset) {
 	var data [][]string
 	for i := range assets {
 		a := assets[i]
-		data = append(data, []string{fmt.Sprintf("%d", i+1), a.Name, a.ProjectName, a.Url})
+		data = append(data, []string{fmt.Sprintf("%d", i+1), a.Name, a.ProjectName, a.Origin})
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())
-	table.SetHeader([]string{"Number", "Name", "Project Name", "URL"})
+	table.SetHeader([]string{"Number", "Name", "Project Name", "Origin"})
 	table.SetBorder(false)
 	table.AppendBulk(data)
 	fmt.Fprintf(os.Stdout, "\n")
