@@ -26,7 +26,7 @@ func preflightAsset(a *[]byte, file string) error {
 
 	//if extension indicates YAML, attempt conversion
 	//(otherwise assume JSON)
-	re := regexp.MustCompile("(?i)\\.ya?ml$")
+	re := regexp.MustCompile("(?i)\\.[yr]a?ml$")
 	isYaml := re.FindStringIndex(file) != nil
 
 	if isYaml {
