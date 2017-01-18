@@ -7,6 +7,7 @@ import (
 func TestPreflightAsset(t *testing.T) {
 	jsonFileMock := "mock.json"
 	yamlFileMock := "mock.yaml"
+	ramlFileMock := "mock.raml"
 
 	//byte slices
 	invalidUtf8 := []byte{0xff, 0xfe, 0xfd}
@@ -21,6 +22,9 @@ func TestPreflightAsset(t *testing.T) {
 - "roobar"
 `)
 	multilineYamlConverted := []byte("{\"foo\":[\"bar\",\"foobar\",\"boofar\",\"roobar\"]}")
+	multilineRaml := []byte(`#%RAML 1.0
+  title: My API`)
+	multilineRamlConverted := []byte("{\"title\":\"My API\"}")
 
 	//expect error
 	err := preflightAsset(&invalidUtf8, jsonFileMock)
@@ -50,6 +54,13 @@ func TestPreflightAsset(t *testing.T) {
 		t.Error("Must reject XML markup")
 	}
 
+	//RAML 0.8/1.0 requires a version line up front
+	//so reject any YAML file without it
+	err = preflightAsset(&multilineYaml, ramlFileMock)
+	if err == nil {
+		t.Error("Must reject RAML without initial RAML version line")
+	}
+
 	//expect success
 	err = preflightAsset(&validYaml, yamlFileMock)
 	if err != nil {
@@ -68,5 +79,14 @@ func TestPreflightAsset(t *testing.T) {
 	}
 	if string(multilineYaml) != string(multilineYamlConverted) {
 		t.Errorf("Expected %s to match %s", multilineYaml, multilineYamlConverted)
+	}
+
+	//likewise for RAML input
+	err = preflightAsset(&multilineRaml, ramlFileMock)
+	if err != nil {
+		t.Errorf("Must accept valid multiline RAML: %v", err)
+	}
+	if string(multilineRaml) != string(multilineRamlConverted) {
+		t.Errorf("Expected %s to match %s", multilineRaml, multilineRamlConverted)
 	}
 }
