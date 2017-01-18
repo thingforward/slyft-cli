@@ -90,7 +90,7 @@ Contains libraries from
 * https://github.com/olekukonko/tablewriter	Copyright (C) 2014 by Oleku Konko
 * https://github.com/op/go-logging		Copyright (c) 2013 Örjan Persson
 * https://github.com/siddontang/go		Copyright (c) 2014 siddontang
-
+* https://github.com/ghodss/yaml                Copyright (c) 2014 Sam Ghods
 `)
 	}
 }
