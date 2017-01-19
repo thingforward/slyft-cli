@@ -264,12 +264,16 @@ func addAsset(cmd *cli.Cmd) {
 }
 
 func getAsset(cmd *cli.Cmd) {
-	cmd.Spec = "--project --file"
+	cmd.Spec = "[--project] --file"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
 	file := cmd.StringOpt("file f", "", "name of the asset to be downloaded")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
+
+		if *name == "" {
+			*name, _ = ReadProjectLock()
+		}
 		// first get the project, then get the pid, and make the call.
 		p, err := chooseProject(*name, "Download asset from: ")
 		if err != nil {
