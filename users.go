@@ -72,7 +72,7 @@ func readSecret(ask string) string {
 
 func termsUri() (string, error) {
 	// get T&C JSON from endpoint to get the URL to the latest terms document
-	resp, err := Do("/terms", "GET", nil)
+	resp, err := DoNoAuth("/terms", "GET", nil)
 	defer resp.Body.Close()
 	if err != nil {
 		return "", err
