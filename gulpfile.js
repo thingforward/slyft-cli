@@ -11,6 +11,7 @@ var gulp  = require('gulp'),
 var pkg = require('./package.json');
 var platform = os.platform();
 var arch = os.arch();
+var execsuffix = "";
 if (platform === "linux") {
   var obj = getos(function(e, os) {
     if (!e) {
@@ -18,6 +19,9 @@ if (platform === "linux") {
       platform = platform.replace(/ /g, '_').toLowerCase();
     }
   });
+}
+if (platform === "win32") {
+  execsuffix = ".exe"
 }
 
 //default task (`gulp`) triggers build
@@ -48,7 +52,7 @@ gulp.task('go-get', function(callback) {
 
 //build but don't install - the end product lives in `dist`
 gulp.task('go-build', function(callback) {
-  exec('go build -o bin/slyft .', function(err, stdout, stderr) {
+  exec('go build -o bin/slyft'+execsuffix+' .', function(err, stdout, stderr) {
     console.log(stdout);
     console.log(stderr);
     callback(err);
