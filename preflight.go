@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,10 +27,18 @@ func preflightAsset(a *[]byte, file string) error {
 
 	//if extension indicates YAML, attempt conversion
 	//(otherwise assume JSON)
-	re := regexp.MustCompile("(?i)\\.ya?ml$")
-	isYaml := re.FindStringIndex(file) != nil
+	reYaml := regexp.MustCompile("(?i)\\.ya?ml$") //'a' is optional
+	isYaml := reYaml.FindStringIndex(file) != nil
+	reRaml := regexp.MustCompile("(?i)\\.raml$") //'a' is obligatory
+	isRaml := reRaml.FindStringIndex(file) != nil
 
-	if isYaml {
+	if isRaml {
+		if bytes.HasPrefix(*a, []byte("#%RAML")) == false {
+			return errors.New(fmt.Sprint("invalid RAML: expected RAML comment line"))
+		}
+	}
+
+	if isYaml || isRaml {
 		json, err := yaml.YAMLToJSON(*a)
 		if err != nil {
 			return errors.New(fmt.Sprintf("invalid YAML: %v", err))
