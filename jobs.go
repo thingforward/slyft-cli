@@ -187,6 +187,9 @@ func jobStatusProject(cmd *cli.Cmd) {
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
+		if *name == "" {
+			*name, _ = ReadProjectLock()
+		}
 		if *all || *name == "" {
 			chooseJob("/v1/jobs", false, "")
 			return
@@ -208,8 +211,11 @@ func jobStatusProject(cmd *cli.Cmd) {
 }
 
 func buildProject(cmd *cli.Cmd) {
-	cmd.Spec = "--project"
+	cmd.Spec = "[--project]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	if *name == "" {
+		*name, _ = ReadProjectLock()
+	}
 
 	cmd.Action = func() {
 		postNewJOB("build", strings.TrimSpace(*name))
@@ -217,8 +223,11 @@ func buildProject(cmd *cli.Cmd) {
 }
 
 func validateProject(cmd *cli.Cmd) {
-	cmd.Spec = "--project"
+	cmd.Spec = "[--project]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	if *name == "" {
+		*name, _ = ReadProjectLock()
+	}
 
 	cmd.Action = func() {
 		postNewJOB("validate", strings.TrimSpace(*name))

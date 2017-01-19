@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -125,4 +127,21 @@ func TerminalHeight() int {
 	}
 
 	return height
+}
+
+// looks in current directory for a file `.slyftproject`,
+// reads the first line and returns it (as a replacename
+// for --name parameter whereever a project name is required)
+func ReadProjectLock() (string, error) {
+	f, err := os.Open(".slyftproject")
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	if scanner.Scan() {
+		return scanner.Text(), nil
+	}
+	return "", errors.New("NoProjectLock")
 }
