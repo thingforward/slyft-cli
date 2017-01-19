@@ -76,6 +76,6 @@ Avoiding `crlf` is important as `gofmt` standardises on Unix line endings.
 
 ## License
 
-(C) 2016 Digital Incubation and Growth GmbH
+(C) 2016,2017 Digital Incubation and Growth GmbH
 Licensed under the Apache License, Version 2.0
 See LICENSE for details
