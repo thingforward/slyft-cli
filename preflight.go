@@ -21,8 +21,16 @@ func preflightAsset(a *[]byte, file string) error {
 		return errors.New(fmt.Sprintf("input length must not exceed %d", maxAssetLen))
 	}
 
-	if utf8.Valid(*a) == false {
-		return errors.New("input must be valid UTF-8")
+	//UTF-16 or UTF-32?
+	utfEndiannessSet := bytes.HasPrefix(*a, []byte{0xff, 0xfe}) || //UTF-16LE
+		bytes.HasPrefix(*a, []byte{0xfe, 0xff}) || //UTF-16BE
+		bytes.HasPrefix(*a, []byte{0x00, 0x00, 0xfe, 0xff}) || //UTF-32LE
+		bytes.HasPrefix(*a, []byte{0x00, 0x00, 0xff, 0xfe}) //UTF-32BE
+
+	//for UTF-16 or UTF-32, let JSON/YAML parsers test validity
+	//otherwise ensure UTF-8 validity
+	if utfEndiannessSet == false && utf8.Valid(*a) == false {
+		return errors.New("invalid UTF-8")
 	}
 
 	//if extension indicates YAML, attempt conversion
