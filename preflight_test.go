@@ -9,7 +9,7 @@ func TestPreflightAsset(t *testing.T) {
 	yamlFileMock := "mock.yaml"
 	ramlFileMock := "mock.raml"
 
-	//byte slices
+	//byte arrays
 	invalidUtf8 := []byte{0xff, 0xfe, 0xfd}
 	xmlMarkup := []byte("<?xml version='1.0' encoding='UTF-8' standalone='yes'?><root/>")
 	validJson := []byte("{ \"foo\": [\"bar\", \"barfoo\"] }")
