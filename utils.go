@@ -4,18 +4,17 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"github.com/siddontang/go/log"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
-
 	"strconv"
-
-	"github.com/siddontang/go/log"
 )
 
 func defaultConfigFile() string {
-	return os.Getenv("HOME") + "/.slyftrc" // this will fail for windows
+	return os.Getenv("HOME") + filepath.FromSlash("/.slyftrc")
 }
 
 func readFile(fileName string) ([]byte, error) {
