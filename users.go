@@ -114,7 +114,19 @@ func displayTermsAndConditions() error {
 		return err
 	}
 	fmt.Print("\n-------------------------------------------------\n")
-	fmt.Print(terms)
+	lines := strings.Split(terms, "\n")
+	term_height := TerminalHeight() - 2
+	reader := bufio.NewReader(os.Stdin)
+	for idx, line := range lines {
+		fmt.Print(line)
+		fmt.Print("\n")
+
+		if (idx+1)%term_height == 0 {
+			fmt.Print("-- Hit [ENTER] for next page >")
+			reader.ReadString('\n')
+		}
+	}
+
 	fmt.Print("-------------------------------------------------\n")
 	return nil
 }
