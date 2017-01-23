@@ -89,7 +89,7 @@ gulp.task('go-vet', function(callback) {
 
 //at the end, remove the binary that's created by `go build`
 gulp.task('clean-bin-home', function() {
-  return del.sync(['./slyft', './slyft.exe'], { force: true });
+  return del.sync(['./slyft-cli', './slyft-cli.exe', './slyft', './slyft.exe'], { force: true });
 });
 
 //keep only latest version in dist for now - it's not a binrepo
@@ -97,6 +97,8 @@ gulp.task('clean-bin-dist', function() {
   return del.sync([
     './dist/' + pkg.name + '-*-' + platform + '_*.zip', //with MD5
     './dist/' + pkg.name + '-*-' + platform + '.zip', //without MD5
+    './dist/slyft-*-' + platform + '_*.zip', //with MD5
+    './dist/slyft-*-' + platform + '.zip', //without MD5
     './bin/**/*' //original build system
   ], { force: true });
 });
@@ -113,6 +115,41 @@ gulp.task('dist', function() {
   .pipe(zip(pkg.name + '-' + pkg.version + '-' + platform + '-' + arch + '.zip'))
   .pipe(md5())
   .pipe(gulp.dest('./dist'));
+});
+
+//call this task to cross-compile
+gulp.task('build-win32', function(callback) {
+  runSequence(
+      'go-get',
+      'go-fmt',
+      'go-vet',
+			'go-install-win32',
+      'go-build-win32',
+      'package-binary',
+      'dist',
+      'clean-bin-home',
+      callback);
+});
+
+//install amd64 standard packages
+gulp.task('go-install-win32', function(callback) {
+  exec('GOOS=windows GOARCH=amd64 go install', function(err, stdout, stderr) {
+    console.log(stdout);
+    console.log(stderr);
+    callback(err);
+  });
+});
+
+//now build with hardcoded win32 target
+gulp.task('go-build-win32', function(callback) {
+	platform = "win32"
+	arch = "386"
+	execsuffix = ".exe"
+  exec('GOOS=windows GOARCH=386 go build -o bin/slyft'+execsuffix+' .', function(err, stdout, stderr) {
+    console.log(stdout);
+    console.log(stderr);
+    callback(err);
+  });
 });
 
 gulp.task('watch', function() {

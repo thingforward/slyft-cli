@@ -74,6 +74,11 @@ git config --global core.autocrlf false
 ```
 Avoiding `crlf` is important as `gofmt` standardises on Unix line endings.
 
+If you're *not* on Windows, you may wish to cross-compile a Windows binary by entering:
+```
+$ gulp build-win32
+```
+
 ## License
 
 (C) 2016,2017 Digital Incubation and Growth GmbH
