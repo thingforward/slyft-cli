@@ -47,11 +47,16 @@ func preflightAsset(a *[]byte, file string) error {
 	}
 
 	if isYaml || isRaml {
-		json, err := yaml.YAMLToJSON(*a)
+		jsonbytes, err := yaml.YAMLToJSON(*a)
 		if err != nil {
 			return errors.New(fmt.Sprintf("invalid YAML: %v", err))
 		}
-		*a = json
+		var anyjson interface{}
+		err = json.Unmarshal(jsonbytes, &anyjson)
+		if err != nil {
+			return errors.New(fmt.Sprintf("invalid YAML(2): %v", err))
+		}
+		return nil
 	}
 
 	//now parse the JSON
