@@ -61,13 +61,21 @@ type TermsAcceptance struct {
 }
 
 func readSecret(ask string) string {
-	fmt.Print(ask)
-	byteSecret, err := terminal.ReadPassword(int(syscall.Stdin))
-	fmt.Println("")
-	if err != nil {
-		Log.Critical("Reading secrect failed: " + err.Error())
+	pwd_from_env := os.Getenv("SLYFT_USER_REGISTRATION_PWD")
+	if len(pwd_from_env) == 0 {
+		fmt.Print(ask)
+		byteSecret, err := terminal.ReadPassword(int(syscall.Stdin))
+		fmt.Println("")
+		if err != nil {
+			Log.Critical("Reading secrect failed: " + err.Error())
+		}
+		return string(byteSecret)
+	} else {
+		fmt.Print(ask)
+		fmt.Print(" <<SUPLIED BY ENV VARIABLE>>")
+		fmt.Println("")
+		return pwd_from_env
 	}
-	return string(byteSecret)
 }
 
 func termsUri() (string, error) {
