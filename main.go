@@ -102,7 +102,7 @@ func main() {
 
 	app := cli.App("slyft", "")
 
-	app.Version("v version", "0.1.6")
+	app.Version("v version", "0.1.7")
 
 	app.Command("user u", "User/Account management", RegisterUserRoutes)
 	app.Command("project p", "Project management", RegisterProjectRoutes)
