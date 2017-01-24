@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -180,16 +181,43 @@ func askForConfirmation(s string) bool {
 func readCredentials(confirm bool) (string, string, string) {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Print("Enter Email: ")
-	username, _ := reader.ReadString('\n')
+	var email, password string
+	proceed := false
+	for proceed == false {
+		fmt.Print("Enter Email: ")
+		email, _ = reader.ReadString('\n')
+		proceed = validateEmail(strings.TrimSpace(email))
+		if proceed == false {
+			fmt.Println("Not a valid email address. Please try again.")
+		}
+	}
 
-	password := readSecret("Enter Password (min. 6 characters): ")
+	proceed = false
+	for proceed == false {
+		password = readSecret("Enter Password (min. 6 characters): ")
+		proceed = validatePassword(strings.TrimSpace(password))
+		if proceed == false {
+			fmt.Println("Not a valid password. Please try again.")
+		}
+	}
+
 	if !confirm {
-		return strings.TrimSpace(username), strings.TrimSpace(password), ""
+		return strings.TrimSpace(email), strings.TrimSpace(password), ""
 	}
 
 	passwordConfirmation := readSecret("Please confirm Password: ")
-	return strings.TrimSpace(username), strings.TrimSpace(password), strings.TrimSpace(passwordConfirmation)
+	return strings.TrimSpace(email), strings.TrimSpace(password), strings.TrimSpace(passwordConfirmation)
+}
+
+func validatePassword(s string) bool {
+	return len(s) >= 6
+}
+
+func validateEmail(s string) bool {
+	// regexp for email doesn't work, so check the bare minimum; adapted from:
+	// https://davidcel.is/posts/stop-validating-email-addresses-with-regex/
+	re := regexp.MustCompile(`^.+@.+\..+$`)
+	return re.FindStringIndex(s) != nil
 }
 
 func getCredentials(confirm bool) *Credentials {
