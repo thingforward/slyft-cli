@@ -273,6 +273,9 @@ func showProject(cmd *cli.Cmd) {
 	name := cmd.StringOpt("name", "", "Name of the project")
 
 	cmd.Action = func() {
+		if *name == "" {
+			*name, _ = ReadProjectLock()
+		}
 		p, err := chooseProject(*name, "Which project needs to be displayed in detail: ")
 		if err == nil {
 			resp, err := Do(p.EndPoint(), "GET", nil)
@@ -292,6 +295,9 @@ func deleteProject(cmd *cli.Cmd) {
 	name := cmd.StringOpt("name", "", "Name (or part of it) of the project")
 
 	cmd.Action = func() {
+		if *name == "" {
+			*name, _ = ReadProjectLock()
+		}
 		p, err := chooseProject(*name, "Please choose the project to be deleted: ")
 		if err != nil {
 			Log.Error(err)

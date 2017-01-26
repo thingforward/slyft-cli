@@ -62,7 +62,7 @@ func (ass *Asset) Delete() {
 	if ass == nil {
 		return
 	}
-	confirm := ReadUserInput("Are you sure? [no]: ")
+	confirm := ReadUserInput("Are you sure to delete asset '" + ass.Name + "'? [no]: ")
 	if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
 		resp, err := Do(ass.EndPoint(), "DELETE", nil)
 		defer resp.Body.Close()
@@ -80,7 +80,7 @@ func (p *Project) Delete() {
 	if p == nil {
 		return
 	}
-	confirm := ReadUserInput("Are you sure? [no]: ")
+	confirm := ReadUserInput("Are you sure to delete project '" + p.Name + "'? [no]: ")
 	if confirm == "yes" || confirm == "y" || confirm == "Y" || confirm == "YES" {
 		resp, err := Do(p.EndPoint(), "DELETE", nil)
 		defer resp.Body.Close()
