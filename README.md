@@ -2,7 +2,7 @@
 command line client to slyft-server
 
 ## Run slyft
-To run `slyft`, fetch the appropriate zip file from the folder [dist](dist), extract and run:
+To run `slyft`, fetch the appropriate release zip file, extract and run:
 ```
 $ ./slyft
 ```
