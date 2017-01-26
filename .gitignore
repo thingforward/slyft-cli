@@ -40,5 +40,5 @@ slyft-cli
 Makefile
 cli
 npm-debug.log
-dist/*
+dist/
 .gopath
