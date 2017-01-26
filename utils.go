@@ -13,8 +13,17 @@ import (
 	"strconv"
 )
 
+func portableGetUsersHome() string {
+	// works on Linux, OSX, Windows cmd and Windows gitbash
+	home := os.Getenv("HOME")
+	if home == "" {
+		home = os.Getenv("USERPROFILE")
+	}
+	return home
+}
+
 func defaultConfigFile() string {
-	return os.Getenv("HOME") + filepath.FromSlash("/.slyftrc")
+	return filepath.FromSlash(portableGetUsersHome() + "/.slyftrc")
 }
 
 func readFile(fileName string) ([]byte, error) {
