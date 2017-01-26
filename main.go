@@ -25,6 +25,8 @@ import (
 	"github.com/op/go-logging"
 )
 
+var VERSION = "0.1.7"
+
 var BackendBaseUrl = os.Getenv("SLYFTBACKEND")
 
 var Log = logging.MustGetLogger("ibtlogger")
@@ -83,7 +85,10 @@ func showInfo(cmd *cli.Cmd) {
 		showBanner()
 		fmt.Printf(`
 slyft, slyft.io is (C)opright 2017 Digital Incubation and Growth GmbH
-info@slyft.io  
+info@slyft.io
+`)
+		fmt.Printf("Version %s", VERSION)
+		fmt.Printf(`
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -117,7 +122,7 @@ func main() {
 
 	app := cli.App("slyft", "")
 
-	app.Version("v version", "0.1.7")
+	app.Version("v version", VERSION)
 
 	app.Command("user u", "User/Account management", RegisterUserRoutes)
 	app.Command("project p", "Project management", RegisterProjectRoutes)
