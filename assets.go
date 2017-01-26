@@ -224,9 +224,13 @@ func listAssets(cmd *cli.Cmd) {
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
-		if *all || *name == "" {
+		if *all {
 			chooseAsset("/v1/assets", false, "")
 			return
+		} else {
+			if *name == "" {
+				*name, _ = ReadProjectLock()
+			}
 		}
 
 		// first get the project, then get the pid, and make the call.
