@@ -44,19 +44,18 @@ func preflightAsset(a *[]byte, file string) error {
 		if bytes.HasPrefix(*a, []byte("#%RAML")) == false {
 			return errors.New(fmt.Sprint("invalid RAML: expected RAML comment line"))
 		}
+		//don't attempt to convert RAML, so return result of YAML validation
+		_, err := validateYaml(a)
+		return err
 	}
 
-	if isYaml || isRaml {
-		jsonbytes, err := yaml.YAMLToJSON(*a)
+	if isYaml {
+		jsonbytes, err := validateYaml(a)
 		if err != nil {
-			return errors.New(fmt.Sprintf("invalid YAML: %v", err))
+			return err
 		}
-		var anyjson interface{}
-		err = json.Unmarshal(jsonbytes, &anyjson)
-		if err != nil {
-			return errors.New(fmt.Sprintf("invalid YAML(2): %v", err))
-		}
-		return nil
+		//replace YAML with JSON content
+		*a = jsonbytes
 	}
 
 	//now parse the JSON
@@ -67,4 +66,12 @@ func preflightAsset(a *[]byte, file string) error {
 	}
 
 	return nil
+}
+
+func validateYaml(a *[]byte) ([]byte, error) {
+	jsonbytes, err := yaml.YAMLToJSON(*a)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("invalid YAML (can't convert to JSON): %v", err))
+	}
+	return jsonbytes, nil
 }
