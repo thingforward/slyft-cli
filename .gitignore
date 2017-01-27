@@ -30,7 +30,8 @@ vendor/
 
 # Build system specifics
 node_modules/
-bin/*
+bin/
+dist/
 
 # Home dir binaries
 slyft-cli
@@ -40,5 +41,4 @@ slyft-cli
 Makefile
 cli
 npm-debug.log
-dist/
 .gopath
