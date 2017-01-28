@@ -100,14 +100,12 @@ func extractAssetFromBody(body []byte) ([]Asset, error) {
 func chooseAsset(endpoint string, askUser bool, message string) (*Asset, error) {
 	resp, err := Do(endpoint, "GET", nil)
 	if err != nil {
-		Log.Error(err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	assets, err := extractAssetFromResponse(resp, http.StatusOK, true)
 
 	if err != nil {
-		Log.Error(err)
 		return nil, err
 	}
 
@@ -173,19 +171,19 @@ func creatAssetParam(file string) (*AssetParam, error) {
 func readFileAndPostAsset(file string, p *Project) {
 	assetParam, err := creatAssetParam(file)
 	if err != nil {
-		Log.Error(err)
+		ReportError("Creating request", err)
 		return
 	}
 
 	resp, err := Do(p.AssetsUrl(), "POST", assetParam)
 	if err != nil {
-		Log.Error(err)
+		ReportError("Contacting server", err)
 		return
 	}
 	defer resp.Body.Close()
 	assets, err := extractAssetFromResponse(resp, http.StatusCreated, false)
 	if err != nil {
-		Log.Error(err)
+		ReportError("Creating asset", err)
 		return
 	}
 
@@ -197,28 +195,27 @@ func readFileAndPostAsset(file string, p *Project) {
 func getAssetAndSaveToFile(file string, p *Project) {
 	resp, err := Do(p.AssetstoreUrl(), "GET", &AssetNameString{file})
 	if err != nil {
-		Log.Error(err)
+		ReportError("Downloading asset", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
-
 		// stream body to file of this name
 		out, err := os.Create(file)
 		if err != nil {
-			Log.Error(err)
+			ReportError("Creating asset file", err)
 			return
 		}
 		defer out.Close()
 		_, err = io.Copy(out, resp.Body)
 		if err != nil {
-			Log.Error(err)
+			ReportError("Writing asset file", err)
 			return
 		}
 		fmt.Printf("Downloaded %s\n", file)
 	} else {
-		Log.Error("Error downloading asset")
+		ReportError("Downloading asset", nil)
 	}
 }
 
@@ -241,10 +238,12 @@ func listAssets(cmd *cli.Cmd) {
 		// first get the project, then get the pid, and make the call.
 		p, err := chooseProject(*name, "Which project's assets would you like to see: ")
 		if err != nil {
-			Log.Error(err)
+			ReportError("Choosing the project", err)
 			return
 		}
-		chooseAsset(p.AssetsUrl(), false, "")
+		if _, err = chooseAsset(p.AssetsUrl(), false, ""); err != nil {
+			ReportError("Choosing the asset", err)
+		}
 	}
 }
 
@@ -263,7 +262,7 @@ func addAsset(cmd *cli.Cmd) {
 		// first get the project, then get the pid, and make the call.
 		p, err := chooseProject(*name, "Add asset to: ")
 		if err != nil {
-			Log.Error(err)
+			ReportError("Choosing the project", err)
 			return
 		}
 
@@ -286,7 +285,7 @@ func getAsset(cmd *cli.Cmd) {
 		// first get the project, then get the pid, and make the call.
 		p, err := chooseProject(*name, "Download asset from: ")
 		if err != nil {
-			Log.Error(err)
+			ReportError("Choosing the project", err)
 			return
 		}
 
@@ -318,14 +317,14 @@ func removeAsset(cmd *cli.Cmd) {
 			// first get the project, then get the pid, and make the call.
 			p, err2 := chooseProject(*name, "Which project's assets would you like to see: ")
 			if err2 != nil {
-				Log.Error(err2)
+				ReportError("Choosing the project", err)
 				return
 			}
 			ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be removed: ")
 		}
 
 		if err != nil {
-			Log.Error(err)
+			ReportError("Choosing the asset", err)
 			return
 		}
 

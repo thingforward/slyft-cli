@@ -171,7 +171,7 @@ func createProject(cmd *cli.Cmd) {
 		projectDetails := ReadUserInput("Details to the project (optional): ")
 		resp, err := Do("/v1/projects", "POST", createProjectParam(*name, projectDetails, ""))
 		if err != nil {
-			Log.Error(err)
+			ReportError("Contacting the server", err)
 			return
 		}
 		defer resp.Body.Close()
@@ -193,13 +193,13 @@ func settingsProject(cmd *cli.Cmd) {
 			resp, err := Do(p.EndPoint(), "PUT", createProjectParam("", "", fmt.Sprintf(`{"%s": "%s"}`, *key, *value)))
 			defer resp.Body.Close()
 			if err != nil || resp.StatusCode != http.StatusNoContent {
-				Log.Error("Something went wrong. Please try again")
+				fmt.Println("Something went wrong. Please try again")
 			} else {
 				fmt.Println("Was successfully updated")
 			}
 			return
 		}
-		Log.Error(err)
+		ReportError("Choosing a project", err)
 	}
 }
 
@@ -217,7 +217,7 @@ func listProjects(cmd *cli.Cmd) {
 	cmd.Action = func() {
 		resp, err := FindProjects(*name)
 		if err != nil {
-			Log.Error(err)
+			ReportError("Listing the projects", err)
 			return
 		}
 		defer resp.Body.Close()
@@ -291,7 +291,7 @@ func showProject(cmd *cli.Cmd) {
 				return
 			}
 		}
-		Log.Error(err)
+		ReportError("Showing project", err)
 		return
 	}
 }
@@ -306,7 +306,7 @@ func deleteProject(cmd *cli.Cmd) {
 		}
 		p, err := chooseProject(*name, "Please choose the project to be deleted: ")
 		if err != nil {
-			Log.Error(err)
+			ReportError("Deleting project", err)
 			return
 		}
 		DeleteApiModel(p)

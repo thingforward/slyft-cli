@@ -279,7 +279,7 @@ func RegisterUser() {
 	fmt.Println()
 	err := authenticateUser("/auth", true)
 	if err != nil {
-		Log.Error("We're very sorry, but your registration failed.")
+		fmt.Println("We're very sorry, but your registration failed.")
 	} else {
 		fmt.Println("\nRegistration successful. We've sent you a confirmation email to the email address")
 		fmt.Println("you given for this registration process. Please have a look at your inbox for")
@@ -292,7 +292,7 @@ func RegisterUser() {
 func LogUserIn() {
 	err := authenticateUser("/auth/sign_in", false)
 	if err != nil {
-		Log.Error("Sorry, login failed")
+		fmt.Println("Sorry, login failed")
 	} else {
 		fmt.Println("Login successful, have fun...")
 	}

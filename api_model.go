@@ -19,9 +19,10 @@ func DeleteApiModel(inst SlyftApiModelInterface) {
 		resp, err := Do(inst.EndPoint(), "DELETE", nil)
 		defer resp.Body.Close()
 		if err != nil || resp.StatusCode != http.StatusNoContent {
-			Log.Error("Something went wrong. Please try again")
+			fmt.Printf("Something went wrong. Please try again. (ResponseCode: %d)\n", resp.StatusCode)
+			Log.Debug(err)
 		} else {
-			Log.Error("Was successfully deleted")
+			fmt.Println("Was successfully deleted")
 		}
 	} else {
 		fmt.Println("Good decision!")

@@ -24,7 +24,7 @@ func askForConfirmation(s string) bool {
 
 		response, err := reader.ReadString('\n')
 		if err != nil {
-			Log.Error(err)
+			ReportError("Getting confirmation", err)
 			return false
 		}
 
@@ -177,4 +177,12 @@ func ReadProjectLock() (string, error) {
 		return scanner.Text(), nil
 	}
 	return "", errors.New("NoProjectLock")
+}
+
+func ReportError(context string, err error) {
+	fmt.Printf("%s: failed.\n", context)
+	if err != nil {
+		fmt.Printf("Details: %s\n", err.Error())
+		Log.Debugf("%s - failed - %s\n", context, err)
+	}
 }

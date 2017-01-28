@@ -108,14 +108,12 @@ func extractJobFromBody(body []byte) ([]Job, error) {
 func chooseJob(endpoint string, askUser bool, message string) (*Job, error) {
 	resp, err := Do(endpoint, "GET", nil)
 	if err != nil {
-		Log.Error(err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	jobs, err := extractJobFromResponse(resp, http.StatusOK, true)
 
 	if err != nil {
-		Log.Error(err)
 		return nil, err
 	}
 
@@ -161,20 +159,20 @@ func creatJobParam(kind string, p *Project) *JobParam {
 func postNewJOB(kind, name string) {
 	p, err := chooseProject(name, fmt.Sprintf("%s project: ", kind))
 	if err != nil {
-		Log.Error(err)
+		ReportError("Choosing a project", err)
 		return
 	}
 
 	resp, err := Do(p.JobsUrl(), "POST", creatJobParam(kind, p))
 	if err != nil {
-		Log.Error(err)
+		ReportError("Contacting the server", err)
 		return
 	}
 
 	defer resp.Body.Close()
 	jobs, err := extractJobFromResponse(resp, http.StatusCreated, false)
 	if err != nil {
-		Log.Error(err)
+		ReportError("Reading the server response", err)
 		return
 	}
 
@@ -194,19 +192,19 @@ func jobStatusProject(cmd *cli.Cmd) {
 			*name, _ = ReadProjectLock()
 		}
 		if *all || *name == "" {
-			chooseJob("/v1/jobs", false, "")
-			return
+			_, err := chooseJob("/v1/jobs", false, "")
+			ReportError("Choosing the job", err)
 		}
 
 		// first get the project, then get the pid, and make the call.
 		p, err := chooseProject(*name, "Which project's jobs would you like to see: ")
 		if err != nil {
-			Log.Error(err)
+			ReportError("Choosing the project", err)
 			return
 		}
 		job, err := chooseJob(p.JobsUrl(), true, "Select a job id to show more details: ")
 		if err != nil {
-			Log.Error(err)
+			ReportError("Selecting the job", err)
 			return
 		}
 		job.Display()
