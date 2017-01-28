@@ -49,6 +49,7 @@ func (a *Asset) Display() { // String?
 	table.SetBorder(false)
 	table.AppendBulk(data)
 	fmt.Fprintf(os.Stdout, "\n---- Asset Details ----\n")
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.Render()
 	fmt.Fprintf(os.Stdout, "\n")
 }
