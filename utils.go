@@ -4,14 +4,39 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"github.com/siddontang/go/log"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
+
+	"github.com/siddontang/go/log"
 )
+
+func askForConfirmation(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Printf("%s [y/n]: ", s)
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			Log.Error(err)
+			return false
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
+		}
+	}
+}
 
 func portableGetUsersHome() string {
 	// works on Linux, OSX, Windows cmd and Windows gitbash
