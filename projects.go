@@ -303,7 +303,10 @@ func deleteProject(cmd *cli.Cmd) {
 			Log.Error(err)
 			return
 		}
-		p.Delete()
+		accept := askForConfirmation(`Are you sure to delete the project"` + p.Name + `"`)
+		if accept {
+			p.Delete()
+		}
 	}
 }
 
