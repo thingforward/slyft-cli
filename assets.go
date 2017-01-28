@@ -318,7 +318,7 @@ func removeAsset(cmd *cli.Cmd) {
 			// first get the project, then get the pid, and make the call.
 			p, err2 := chooseProject(*name, "Which project's assets would you like to see: ")
 			if err2 != nil {
-				Log.Error(err)
+				Log.Error(err2)
 				return
 			}
 			ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be removed: ")
