@@ -57,39 +57,3 @@ func extractJobFromResponse(resp *http.Response, expectedCode int, listExpected 
 
 	return extractJobFromBody(body)
 }
-
-func (ass *Asset) Delete() {
-	if ass == nil {
-		return
-	}
-	confirm := askForConfirmation("Are you sure to delete asset '" + ass.Name + "'?")
-	if confirm {
-		resp, err := Do(ass.EndPoint(), "DELETE", nil)
-		defer resp.Body.Close()
-		if err != nil || resp.StatusCode != http.StatusNoContent {
-			Log.Error("Something went wrong. Please try again")
-		} else {
-			fmt.Println("Was successfully deleted")
-		}
-	} else {
-		fmt.Println("Good decision!")
-	}
-}
-
-func (p *Project) Delete() {
-	if p == nil {
-		return
-	}
-	confirm := askForConfirmation("Are you sure to delete project '" + p.Name + "'? [no]: ")
-	if confirm {
-		resp, err := Do(p.EndPoint(), "DELETE", nil)
-		defer resp.Body.Close()
-		if err != nil || resp.StatusCode != http.StatusNoContent {
-			Log.Error("Something went wrong. Please try again")
-		} else {
-			Log.Error("Was successfully deleted")
-		}
-	} else {
-		fmt.Println("Good decision!")
-	}
-}

@@ -26,6 +26,10 @@ type Asset struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+func (a *Asset) getName() string {
+	return a.Name
+}
+
 func (a *Asset) Display() { // String?
 	if a == nil {
 		return
@@ -324,7 +328,7 @@ func removeAsset(cmd *cli.Cmd) {
 			return
 		}
 
-		ass.Delete()
+		DeleteApiModel(ass)
 	}
 }
 

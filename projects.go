@@ -10,9 +10,10 @@ import (
 	"strconv"
 	"time"
 
+	"strings"
+
 	"github.com/jawher/mow.cli"
 	"github.com/olekukonko/tablewriter"
-	"strings"
 )
 
 type Project struct {
@@ -23,6 +24,10 @@ type Project struct {
 	UserID    int       `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (p *Project) getName() string {
+	return p.Name
 }
 
 type ProjectParam struct {
@@ -303,10 +308,7 @@ func deleteProject(cmd *cli.Cmd) {
 			Log.Error(err)
 			return
 		}
-		accept := askForConfirmation(`Are you sure to delete the project"` + p.Name + `"`)
-		if accept {
-			p.Delete()
-		}
+		DeleteApiModel(p)
 	}
 }
 
