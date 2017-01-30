@@ -25,7 +25,7 @@ import (
 	"github.com/op/go-logging"
 )
 
-var VERSION = "0.2"
+var VERSION = "0.2.0"
 
 var BackendBaseUrl = os.Getenv("SLYFTBACKEND")
 
