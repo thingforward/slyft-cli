@@ -332,11 +332,20 @@ func LogUserOut() {
 }
 
 func DeleteUser() {
-	err := makeDeleteCall("/auth")
-	if err != nil {
-		Log.Error("Sorry, deletion failed")
+	fmt.Println("You may choose to delete your Slyft account at any time. Please be aware")
+	fmt.Println("that all previously processed data under your account will be deleted.")
+	fmt.Println()
+
+	confirm := askForConfirmation("Are you sure to delete your user account?")
+	if confirm {
+		err := makeDeleteCall("/auth")
+		if err != nil {
+			Log.Error("Sorry, deletion failed")
+		} else {
+			fmt.Println("Deleted the account. We are sorry to see you go. Come back soon...")
+		}
 	} else {
-		fmt.Println("Deleted the account. We are sorry to see you go. Come back soon...")
+		fmt.Println("Account left unchanged.")
 	}
 }
 
