@@ -32,6 +32,10 @@ func (sa SlyftAuth) String() string {
 	return string(bytes)
 }
 
+func (sa SlyftAuth) GoodForLogin() bool {
+	return (sa.AccessToken != "" && sa.Client != "" && sa.Uid != "")
+}
+
 type SlyftRC struct {
 	Auth SlyftAuth
 }

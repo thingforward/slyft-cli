@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -18,7 +19,11 @@ func Do(resource, method string, params interface{}) (*http.Response, error) {
 
 	auth, err := readAuthFromConfig()
 	if err != nil {
+		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
 		return nil, err
+	}
+	if !auth.GoodForLogin() {
+		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
 	}
 
 	addAuthToHeader(&req.Header, auth)
