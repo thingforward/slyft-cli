@@ -40,38 +40,29 @@ func preflightAsset(a *[]byte, file string) error {
 	reRaml := regexp.MustCompile("(?i)\\.raml$") //'a' is obligatory
 	isRaml := reRaml.FindStringIndex(file) != nil
 
-	if isRaml {
-		if bytes.HasPrefix(*a, []byte("#%RAML")) == false {
+	if isYaml || isRaml {
+		if isRaml && bytes.HasPrefix(*a, []byte("#%RAML")) == false {
 			return errors.New(fmt.Sprint("invalid RAML: expected RAML comment line"))
 		}
-		//don't attempt to convert RAML, so return result of YAML validation
-		_, err := validateYaml(a)
-		return err
+		return validateYaml(a)
 	}
 
-	if isYaml {
-		jsonbytes, err := validateYaml(a)
-		if err != nil {
-			return err
-		}
-		//replace YAML with JSON content
-		*a = jsonbytes
-	}
+	return validateJson(a)
+}
 
-	//now parse the JSON
+func validateYaml(a *[]byte) error {
+	jsonbytes, err := yaml.YAMLToJSON(*a)
+	if err != nil {
+		return errors.New(fmt.Sprintf("invalid YAML (can't convert to JSON): %v", err))
+	}
+	return validateJson(&jsonbytes)
+}
+
+func validateJson(a *[]byte) error {
 	var any interface{}
 	err := json.Unmarshal(*a, &any)
 	if err != nil {
 		return errors.New(fmt.Sprintf("invalid JSON: %v", err))
 	}
-
 	return nil
-}
-
-func validateYaml(a *[]byte) ([]byte, error) {
-	jsonbytes, err := yaml.YAMLToJSON(*a)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("invalid YAML (can't convert to JSON): %v", err))
-	}
-	return jsonbytes, nil
 }
