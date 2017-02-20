@@ -123,7 +123,7 @@ gulp.task('build-win32', function(callback) {
       'go-get',
       'go-fmt',
       'go-vet',
-			'go-install-win32',
+      'go-install-win32',
       'go-build-win32',
       'package-binary',
       'dist',
