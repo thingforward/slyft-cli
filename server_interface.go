@@ -29,7 +29,18 @@ func Do(resource, method string, params interface{}) (*http.Response, error) {
 	addAuthToHeader(&req.Header, auth)
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 	client := &http.Client{}
-	return client.Do(req)
+
+	//Log.Debugf("auth=%#v", auth)
+	Log.Debugf("req=%#v", req)
+
+	resp, err := client.Do(req)
+	Log.Debugf("resp=%#v", resp)
+
+	if err != nil {
+		Log.Debugf("err=%#v", err)
+	}
+
+	return resp, err
 }
 
 func DoNoAuth(resource, method string, params interface{}) (*http.Response, error) {
@@ -43,6 +54,8 @@ func DoNoAuth(resource, method string, params interface{}) (*http.Response, erro
 	}
 
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
+	Log.Debugf("req=%#v", req)
+	Log.Debugf("b=%#v", b)
 	client := &http.Client{}
 	return client.Do(req)
 }

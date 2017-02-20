@@ -28,7 +28,7 @@ type JobResults struct {
 	ResultMessage string   `json:"resultMessage"`
 	ResultStatus  int      `json:"resultStatus"`
 	ResultAssets  []string `json:"resultAssets"`
-	ResultDetails string   `json:"resultDetails"`
+	ResultDetails []string `json:"resultDetails"`
 }
 
 func (j *Job) Display() { // String?
@@ -49,7 +49,11 @@ func (j *Job) Display() { // String?
 	for index, asset := range j.Results.ResultAssets {
 		data = append(data, []string{fmt.Sprintf("ResultAssets[%d]", index), asset})
 	}
-	data = append(data, []string{"ResultDetails", fmt.Sprintf("%s", j.Results.ResultDetails)})
+	// Details are an array.
+	for index, detail := range j.Results.ResultDetails {
+		data = append(data, []string{fmt.Sprintf("ResultDetails[%d]", index), detail})
+	}
+	//data = append(data, []string{"ResultDetails", fmt.Sprintf("%s", j.Results.ResultDetails)})
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())

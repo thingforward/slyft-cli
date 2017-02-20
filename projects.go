@@ -119,6 +119,7 @@ func DisplayProjects(projects []Project) {
 }
 
 func extractProjectsFromBody(body []byte) ([]Project, error) {
+	//Log.Debugf("body=%v", string(body))
 	projects := make([]Project, 0)
 	if err := json.Unmarshal(body, &projects); err != nil {
 		return nil, err
@@ -127,7 +128,9 @@ func extractProjectsFromBody(body []byte) ([]Project, error) {
 }
 
 func extractProjectFromBody(body []byte) ([]Project, error) {
+	//Log.Debugf("body=%v", string(body))
 	p := &Project{}
+
 	if err := json.Unmarshal(body, &p); err != nil {
 		return nil, err
 	}
@@ -137,8 +140,10 @@ func extractProjectFromBody(body []byte) ([]Project, error) {
 func displayProjectsFromResponse(resp *http.Response, expectedCode int, listExpected bool) error {
 	projects, err := extractProjectFromResponse(resp, expectedCode, listExpected)
 	if err != nil {
+		Log.Fatalf("Unable to list projects: %s", err)
 		return err
 	}
+	Log.Debugf("projects=%+v", projects)
 
 	if listExpected {
 		DisplayProjects(projects)
@@ -216,6 +221,8 @@ func listProjects(cmd *cli.Cmd) {
 
 	cmd.Action = func() {
 		resp, err := FindProjects(*name)
+		Log.Debugf("err=%#v", err)
+		Log.Debugf("resp=%#v", resp)
 		if err != nil {
 			ReportError("Listing the projects", err)
 			return
@@ -314,6 +321,8 @@ func deleteProject(cmd *cli.Cmd) {
 }
 
 func RegisterProjectRoutes(proj *cli.Cmd) {
+	SetupLogger()
+
 	proj.Command("create c", "Create a new project", createProject)
 	proj.Command("settings", "Create a new project", settingsProject)
 	proj.Command("list ls", "List all projects", listProjects)
