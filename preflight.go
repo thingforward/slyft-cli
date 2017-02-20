@@ -12,13 +12,13 @@ import (
 
 const maxAssetLen int = 20000
 
-func preflightAsset(a *[]byte, file string) error {
+func preflightAsset(a *[]byte, file string) (string, error) {
 	if len(*a) == 0 {
-		return errors.New("input must not be empty")
+		return "", errors.New("input must not be empty")
 	}
 
 	if len(*a) > maxAssetLen {
-		return errors.New(fmt.Sprintf("input length must not exceed %d", maxAssetLen))
+		return "", errors.New(fmt.Sprintf("input length must not exceed %d", maxAssetLen))
 	}
 
 	//UTF-16 or UTF-32?
@@ -30,7 +30,7 @@ func preflightAsset(a *[]byte, file string) error {
 	//for UTF-16 or UTF-32, let JSON/YAML parsers test validity
 	//otherwise ensure UTF-8 validity
 	if utfEndiannessSet == false && utf8.Valid(*a) == false {
-		return errors.New("invalid UTF-8")
+		return "", errors.New("invalid UTF-8")
 	}
 
 	//if extension indicates YAML, attempt conversion
@@ -40,29 +40,31 @@ func preflightAsset(a *[]byte, file string) error {
 	reRaml := regexp.MustCompile("(?i)\\.raml$") //'a' is obligatory
 	isRaml := reRaml.FindStringIndex(file) != nil
 
-	if isYaml || isRaml {
-		if isRaml && bytes.HasPrefix(*a, []byte("#%RAML")) == false {
-			return errors.New(fmt.Sprint("invalid RAML: expected RAML comment line"))
+	if isRaml {
+		if bytes.HasPrefix(*a, []byte("#%RAML")) == false {
+			return "", errors.New(fmt.Sprint("invalid RAML: expected RAML comment line"))
 		}
-		return validateYaml(a)
 	}
 
-	return validateJson(a)
-}
-
-func validateYaml(a *[]byte) error {
-	jsonbytes, err := yaml.YAMLToJSON(*a)
-	if err != nil {
-		return errors.New(fmt.Sprintf("invalid YAML (can't convert to JSON): %v", err))
+	if isYaml || isRaml {
+		jsonbytes, err := yaml.YAMLToJSON(*a)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("invalid YAML: %v", err))
+		}
+		var anyjson interface{}
+		err = json.Unmarshal(jsonbytes, &anyjson)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("invalid YAML(2): %v", err))
+		}
+		return "application/x-yaml", nil
 	}
-	return validateJson(&jsonbytes)
-}
 
-func validateJson(a *[]byte) error {
+	//now parse the JSON
 	var any interface{}
 	err := json.Unmarshal(*a, &any)
 	if err != nil {
-		return errors.New(fmt.Sprintf("invalid JSON: %v", err))
+		return "", errors.New(fmt.Sprintf("invalid JSON: %v", err))
 	}
-	return nil
+
+	return "application/json", nil
 }

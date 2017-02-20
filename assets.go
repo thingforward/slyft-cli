@@ -155,7 +155,7 @@ func creatAssetParam(file string) (*AssetParam, error) {
 		return nil, err
 	}
 
-	err = preflightAsset(&bytes, file)
+	mimeType, err := preflightAsset(&bytes, file)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func creatAssetParam(file string) (*AssetParam, error) {
 	return &AssetParam{
 		AssetPost{
 			Name:  file,
-			Asset: "data:text/plain;base64," + base64.StdEncoding.EncodeToString(bytes),
+			Asset: "data:" + mimeType + ";base64," + base64.StdEncoding.EncodeToString(bytes),
 		},
 	}, nil
 }
