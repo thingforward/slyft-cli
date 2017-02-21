@@ -229,7 +229,7 @@ func waitForJobCompletion(job *Job, wait int) bool {
 
 		resp, err := Do(job.EndPoint(), "GET", nil)
 		if err != nil {
-			return
+			return false
 		}
 		defer resp.Body.Close()
 		jobs, err := extractJobFromResponse(resp, http.StatusOK, false)
@@ -262,7 +262,7 @@ func buildProject(cmd *cli.Cmd) {
 	cmd.Action = func() {
 		job := postNewJob("build", strings.TrimSpace(*name))
 		if wait != nil {
-			_ := waitForJobCompletion(job, *wait)
+			waitForJobCompletion(job, *wait)
 		}
 	}
 }
@@ -278,7 +278,7 @@ func validateProject(cmd *cli.Cmd) {
 	cmd.Action = func() {
 		job := postNewJob("validate", strings.TrimSpace(*name))
 		if wait != nil {
-			_ := waitForJobCompletion(job, *wait)
+			waitForJobCompletion(job, *wait)
 		}
 	}
 }

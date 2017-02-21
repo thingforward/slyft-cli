@@ -190,6 +190,11 @@ func settingsProject(cmd *cli.Cmd) {
 	key := cmd.StringArg("KEY", "", "Name of the setting")
 	value := cmd.StringArg("VALUE", "", "Value of the setting")
 	cmd.Action = func() {
+		if *key == "" {
+			fmt.Println("KEY must not be empty.")
+			return
+		}
+
 		if *name == "" {
 			*name, _ = ReadProjectLock()
 		}
@@ -198,9 +203,15 @@ func settingsProject(cmd *cli.Cmd) {
 			resp, err := Do(p.EndPoint(), "PUT", createProjectParam("", "", fmt.Sprintf(`{"%s": "%s"}`, *key, *value)))
 			defer resp.Body.Close()
 			if err != nil || resp.StatusCode != http.StatusNoContent {
-				fmt.Println("Something went wrong. Please try again")
+				fmt.Printf("Something went wrong: %s\n", err)
 			} else {
-				fmt.Println("Was successfully updated")
+				fmt.Println("Successfully updated")
+				resp, err := Do(p.EndPoint(), "GET", nil)
+				defer resp.Body.Close()
+				if err == nil {
+					displayProjectsFromResponse(resp, http.StatusOK, false)
+					return
+				}
 			}
 			return
 		}
