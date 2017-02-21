@@ -25,7 +25,7 @@ import (
 	"github.com/op/go-logging"
 )
 
-var VERSION = "0.2.0"
+var VERSION = "0.3.0"
 
 var BackendBaseUrl = os.Getenv("SLYFTBACKEND")
 
@@ -36,6 +36,7 @@ var format_dbg = logging.MustStringFormatter(
 var format = logging.MustStringFormatter(
 	`%{level:.4s} %{id:03x} %{message}`,
 )
+var fDebug *bool
 
 func getLogFormat() logging.Formatter {
 	// if debug, use timestamps to correlate with server actions
@@ -45,7 +46,11 @@ func getLogFormat() logging.Formatter {
 	return format
 }
 
-func setupLogger() {
+func SetupLogger() {
+	if fDebug != nil && *fDebug {
+		fmt.Println("Setting --debug")
+		os.Setenv("DEBUGLEVEL", "DEBUG")
+	}
 	logBackend := logging.NewLogBackend(os.Stderr, "", 0)
 	logBackendWithFormat := logging.NewBackendFormatter(logBackend, getLogFormat())
 	loggerLeveled := logging.AddModuleLevel(logBackendWithFormat)
@@ -60,7 +65,7 @@ func init() {
 	// https://www.reddit.com/r/golang/comments/45mzie/dont_use_gos_default_http_client/
 	http.DefaultClient.Timeout = 10 * time.Second
 
-	setupLogger()
+	SetupLogger()
 
 	// If Environment variable SLYFTBACKEND is present, take it. Must be a full URL
 	if BackendBaseUrl == "" {
@@ -121,6 +126,8 @@ func main() {
 	}
 
 	app := cli.App("slyft", "")
+
+	fDebug = app.BoolOpt("debug d", false, "Show debug output")
 
 	app.Version("v version", VERSION)
 

@@ -174,7 +174,9 @@ func ReadProjectLock() (string, error) {
 
 	scanner := bufio.NewScanner(f)
 	if scanner.Scan() {
-		return scanner.Text(), nil
+		res := scanner.Text()
+		Log.Debugf("Operating on project=%s (from .slyftproject)", res)
+		return res, nil
 	}
 	return "", errors.New("NoProjectLock")
 }

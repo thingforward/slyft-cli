@@ -82,6 +82,7 @@ func DisplayAssets(assets []Asset) {
 }
 
 func extractAssetsFromBody(body []byte) ([]Asset, error) {
+	Log.Debugf("body=%v", string(body))
 	assets := make([]Asset, 0)
 	if err := json.Unmarshal(body, &assets); err != nil {
 		return nil, err
@@ -90,6 +91,7 @@ func extractAssetsFromBody(body []byte) ([]Asset, error) {
 }
 
 func extractAssetFromBody(body []byte) ([]Asset, error) {
+	Log.Debugf("body=%v", string(body))
 	a := &Asset{}
 	if err := json.Unmarshal(body, &a); err != nil {
 		return nil, err
@@ -112,6 +114,7 @@ func chooseAsset(endpoint string, askUser bool, message string) (*Asset, error) 
 	if len(assets) == 0 {
 		return nil, errors.New("No asset. Sorry")
 	}
+	Log.Debugf("assets=%+v", assets)
 
 	DisplayAssets(assets)
 
@@ -333,6 +336,8 @@ func removeAsset(cmd *cli.Cmd) {
 }
 
 func RegisterAssetRoutes(proj *cli.Cmd) {
+	SetupLogger()
+
 	proj.Command("add a", "Add asset to a project", addAsset)
 	proj.Command("list ls", "List your assets", listAssets)
 	proj.Command("get g", "Download a single asset", getAsset)

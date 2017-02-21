@@ -28,7 +28,7 @@ type JobResults struct {
 	ResultMessage string   `json:"resultMessage"`
 	ResultStatus  int      `json:"resultStatus"`
 	ResultAssets  []string `json:"resultAssets"`
-	ResultDetails string   `json:"resultDetails"`
+	ResultDetails []string `json:"resultDetails"`
 }
 
 func (j *Job) Display() { // String?
@@ -49,7 +49,11 @@ func (j *Job) Display() { // String?
 	for index, asset := range j.Results.ResultAssets {
 		data = append(data, []string{fmt.Sprintf("ResultAssets[%d]", index), asset})
 	}
-	data = append(data, []string{"ResultDetails", fmt.Sprintf("%s", j.Results.ResultDetails)})
+	// Details are an array.
+	for index, detail := range j.Results.ResultDetails {
+		data = append(data, []string{fmt.Sprintf("ResultDetails[%d]", index), detail})
+	}
+	//data = append(data, []string{"ResultDetails", fmt.Sprintf("%s", j.Results.ResultDetails)})
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())
@@ -156,29 +160,34 @@ func creatJobParam(kind string, p *Project) *JobParam {
 	}
 }
 
-func postNewJOB(kind, name string) {
+func postNewJob(kind, name string) *Job {
 	p, err := chooseProject(name, fmt.Sprintf("%s project: ", kind))
 	if err != nil {
 		ReportError("Choosing a project", err)
-		return
+		return nil
 	}
 
 	resp, err := Do(p.JobsUrl(), "POST", creatJobParam(kind, p))
 	if err != nil {
 		ReportError("Contacting the server", err)
-		return
+		return nil
 	}
 
 	defer resp.Body.Close()
 	jobs, err := extractJobFromResponse(resp, http.StatusCreated, false)
 	if err != nil {
-		ReportError("Reading the server response", err)
-		return
+		ReportError("Error creating job:", err)
+		return nil
 	}
 
+	Log.Debugf("jobs=%#v", jobs)
 	if len(jobs) == 1 {
 		jobs[0].Display()
+		return &(jobs[0])
+	} else {
+		Log.Errorf("Error, creating a new job returned wrong job data")
 	}
+	return nil
 }
 
 func jobStatusProject(cmd *cli.Cmd) {
@@ -211,27 +220,66 @@ func jobStatusProject(cmd *cli.Cmd) {
 	}
 }
 
+func waitForJobCompletion(job *Job, wait int) bool {
+	fmt.Printf("Waiting (%ds) for job completion..", wait)
+	for wait > 0 {
+		wait -= 5
+		time.Sleep(5 * time.Second)
+		fmt.Print(".")
+
+		resp, err := Do(job.EndPoint(), "GET", nil)
+		if err != nil {
+			return false
+		}
+		defer resp.Body.Close()
+		jobs, err := extractJobFromResponse(resp, http.StatusOK, false)
+		Log.Debugf("jobs=%#v", jobs)
+		//Log.Debugf("#jobs=%d", len(jobs))
+		//Log.Debugf("err=%#v", err)
+
+		if err == nil && jobs != nil && len(jobs) == 1 {
+			Log.Debugf("status=%s", jobs[0].Status)
+			if jobs[0].Status == "processed" {
+				jobs[0].Display()
+				return true
+			}
+		}
+
+	}
+	// if we get here, job did not finish in time. Say so.
+	fmt.Printf("Job %d did not complete in time. Please check manually using `slyft project status`", job.ID)
+	return false
+}
+
 func buildProject(cmd *cli.Cmd) {
-	cmd.Spec = "[--project]"
+	cmd.Spec = "[--project] [--wait]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	wait := cmd.IntOpt("wait w", 30, "Optional number of seconds to wait for job completion")
 	if *name == "" {
 		*name, _ = ReadProjectLock()
 	}
 
 	cmd.Action = func() {
-		postNewJOB("build", strings.TrimSpace(*name))
+		job := postNewJob("build", strings.TrimSpace(*name))
+		if job != nil && wait != nil {
+			waitForJobCompletion(job, *wait)
+		}
 	}
 }
 
 func validateProject(cmd *cli.Cmd) {
-	cmd.Spec = "[--project]"
+	cmd.Spec = "[--project] [--wait]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	wait := cmd.IntOpt("wait w", 30, "Optional number of seconds to wait for job completion")
 	if *name == "" {
 		*name, _ = ReadProjectLock()
 	}
 
 	cmd.Action = func() {
-		postNewJOB("validate", strings.TrimSpace(*name))
+		job := postNewJob("validate", strings.TrimSpace(*name))
+		if job != nil && wait != nil {
+			waitForJobCompletion(job, *wait)
+		}
 	}
 }
 

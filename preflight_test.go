@@ -27,64 +27,94 @@ func TestPreflightAsset(t *testing.T) {
 	//multilineRamlConverted := []byte("{\"title\":\"My API\"}")
 
 	//expect error
-	err := preflightAsset(&invalidUtf8, jsonFileMock)
+	mimetype, err := preflightAsset(&invalidUtf8, jsonFileMock)
 	if err == nil {
 		t.Error("Must reject invalid UTF8 with JSON filename")
 	}
+	if mimetype != "" {
+		t.Error("mimetype must be empty for invalid input")
+	}
 
-	err = preflightAsset(&longAsset, jsonFileMock)
+	mimetype, err = preflightAsset(&longAsset, jsonFileMock)
 	if err == nil {
 		t.Errorf("Must reject assets longer than %d bytes", maxAssetLen)
 	}
+	if mimetype != "" {
+		t.Error("mimetype must be empty for invalid input")
+	}
 
-	err = preflightAsset(&invalidUtf8, yamlFileMock)
+	mimetype, err = preflightAsset(&invalidUtf8, yamlFileMock)
 	if err == nil {
 		t.Error("Must reject invalid UTF8 with YAML filename")
 	}
+	if mimetype != "" {
+		t.Error("mimetype must be empty for invalid input")
+	}
 
-	err = preflightAsset(&validYaml, jsonFileMock)
+	mimetype, err = preflightAsset(&validYaml, jsonFileMock)
 	if err == nil {
 		t.Error("Must reject YAML with JSON filename")
+	}
+	if mimetype != "" {
+		t.Error("mimetype must be empty for invalid input")
 	}
 
 	//much JSON is also valid YAML, so don't disallow JSON with YAML filename
 
-	err = preflightAsset(&xmlMarkup, "")
+	mimetype, err = preflightAsset(&xmlMarkup, "")
 	if err == nil {
 		t.Error("Must reject XML markup")
+	}
+	if mimetype != "" {
+		t.Error("mimetype must be empty for invalid input")
 	}
 
 	//RAML 0.8/1.0 requires a version line up front
 	//so reject any YAML file without it
-	err = preflightAsset(&multilineYaml, ramlFileMock)
+	mimetype, err = preflightAsset(&multilineYaml, ramlFileMock)
 	if err == nil {
 		t.Error("Must reject RAML without initial RAML version line")
 	}
+	if mimetype != "" {
+		t.Error("mimetype must be empty for invalid input")
+	}
 
 	//expect success
-	err = preflightAsset(&validYaml, yamlFileMock)
+	mimetype, err = preflightAsset(&validYaml, yamlFileMock)
 	if err != nil {
 		t.Errorf("Must accept valid YAML: %v", err)
 	}
+	if mimetype == "" {
+		t.Error("mimetype must not be empty for valid input")
+	}
 
-	err = preflightAsset(&validJson, jsonFileMock)
+	mimetype, err = preflightAsset(&validJson, jsonFileMock)
 	if err != nil {
 		t.Errorf("Must accept valid JSON: %v", err)
 	}
+	if mimetype == "" {
+		t.Error("mimetype must not be empty for valid input")
+	}
 
 	//in-place conversion must match predefined result
-	err = preflightAsset(&multilineYaml, yamlFileMock)
+	mimetype, err = preflightAsset(&multilineYaml, yamlFileMock)
 	if err != nil {
 		t.Errorf("Must accept valid multiline YAML: %v", err)
+	}
+	if mimetype == "" {
+		t.Error("mimetype must not be empty for valid input")
 	}
 	//if string(multilineYaml) != string(multilineYamlConverted) {
 	//	t.Errorf("Expected %s to match %s", multilineYaml, multilineYamlConverted)
 	//}
 
 	//likewise for RAML input
-	err = preflightAsset(&multilineRaml, ramlFileMock)
+	mimetype, err = preflightAsset(&multilineRaml, ramlFileMock)
 	if err != nil {
 		t.Errorf("Must accept valid multiline RAML: %v", err)
+	}
+	if mimetype == "" {
+		t.Error("mimetype must not be empty for valid input")
 	}
 	//if string(multilineRaml) != string(multilineRamlConverted) {
 	//	t.Errorf("Expected %s to match %s", multilineRaml, multilineRamlConverted)

@@ -238,7 +238,13 @@ func authenticateUser(endpoint string, register bool) error {
 	}
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(creds)
+
+	Log.Debugf("url=%#v", url)
+
 	resp, err := http.Post(url, "application/json; charset=utf-8", b)
+
+	Log.Debugf("err=%#v", err)
+	Log.Debugf("resp=%#v", resp)
 
 	if err != nil {
 		return err
@@ -305,6 +311,10 @@ func LogUserIn() {
 func makeDeleteCall(endpoint string) error {
 	resp, err := Do(endpoint, "DELETE", nil)
 	deactivateLogin()
+
+	Log.Debugf("err=%#v", err)
+	Log.Debugf("resp=%#v", resp)
+
 	if err != nil {
 		return err
 	}
@@ -318,6 +328,8 @@ func makeDeleteCall(endpoint string) error {
 
 	// handle the error
 	body, err := ioutil.ReadAll(resp.Body)
+	Log.Debugf("err=%#v", err)
+	Log.Debugf("body=%#v", body)
 	if err == nil {
 		Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
 		return errors.New(fmt.Sprintf("Server returned failure: %v\nBye", resp.Status))
@@ -336,6 +348,16 @@ func LogUserOut() {
 }
 
 func DeleteUser() {
+	auth, err := readAuthFromConfig()
+	if err != nil {
+		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
+		return
+	}
+	if !auth.GoodForLogin() {
+		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
+		return
+	}
+
 	fmt.Println("You may choose to delete your Slyft account at any time. Please be aware")
 	fmt.Println("that all previously processed data under your account will be deleted.")
 	fmt.Println()
@@ -354,6 +376,8 @@ func DeleteUser() {
 }
 
 func RegisterUserRoutes(user *cli.Cmd) {
+	SetupLogger()
+
 	user.Command("register r", "Register yourself", func(cmd *cli.Cmd) { cmd.Action = RegisterUser })
 	user.Command("login l", "Login with your credentials", func(cmd *cli.Cmd) { cmd.Action = LogUserIn })
 	user.Command("logout", "Log out from your session", func(cmd *cli.Cmd) { cmd.Action = LogUserOut })

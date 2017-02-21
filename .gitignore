@@ -42,3 +42,4 @@ Makefile
 cli
 npm-debug.log
 .gopath
+.idea
