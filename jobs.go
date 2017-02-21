@@ -176,7 +176,7 @@ func postNewJob(kind, name string) *Job {
 	defer resp.Body.Close()
 	jobs, err := extractJobFromResponse(resp, http.StatusCreated, false)
 	if err != nil {
-		ReportError("Reading the server response", err)
+		ReportError("Error creating job:", err)
 		return nil
 	}
 
@@ -185,7 +185,7 @@ func postNewJob(kind, name string) *Job {
 		jobs[0].Display()
 		return &(jobs[0])
 	} else {
-		Log.Errorf("Error, creating a new job returned wrong job")
+		Log.Errorf("Error, creating a new job returned wrong job data")
 	}
 	return nil
 }
@@ -240,7 +240,7 @@ func waitForJobCompletion(job *Job, wait int) bool {
 		if err == nil && jobs != nil && len(jobs) == 1 {
 			Log.Debugf("status=%s", jobs[0].Status)
 			if jobs[0].Status == "processed" {
-				jobs[0].Display();
+				jobs[0].Display()
 				return true
 			}
 		}
@@ -261,7 +261,7 @@ func buildProject(cmd *cli.Cmd) {
 
 	cmd.Action = func() {
 		job := postNewJob("build", strings.TrimSpace(*name))
-		if wait != nil {
+		if job != nil && wait != nil {
 			waitForJobCompletion(job, *wait)
 		}
 	}
@@ -277,7 +277,7 @@ func validateProject(cmd *cli.Cmd) {
 
 	cmd.Action = func() {
 		job := postNewJob("validate", strings.TrimSpace(*name))
-		if wait != nil {
+		if job != nil && wait != nil {
 			waitForJobCompletion(job, *wait)
 		}
 	}
