@@ -31,7 +31,7 @@ func extractAssetFromResponse(resp *http.Response, expectedCode int, listExpecte
 	}
 
 	if resp.StatusCode != expectedCode {
-		return nil, errors.New(fmt.Sprintf("Failed with the wrong code: %v. (expected %v)\n", resp.StatusCode, expectedCode))
+		return nil, errors.New(fmt.Sprintf("Failed with the wrong code: %v. (expected %v)\nErrors: %s\n", resp.StatusCode, expectedCode, body))
 	}
 
 	if listExpected {
