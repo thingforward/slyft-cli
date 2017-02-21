@@ -348,6 +348,16 @@ func LogUserOut() {
 }
 
 func DeleteUser() {
+	auth, err := readAuthFromConfig()
+	if err != nil {
+		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
+		return
+	}
+	if !auth.GoodForLogin() {
+		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
+		return
+	}
+
 	fmt.Println("You may choose to delete your Slyft account at any time. Please be aware")
 	fmt.Println("that all previously processed data under your account will be deleted.")
 	fmt.Println()

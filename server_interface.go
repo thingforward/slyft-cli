@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"errors"
 )
 
 func Do(resource, method string, params interface{}) (*http.Response, error) {
@@ -24,6 +25,7 @@ func Do(resource, method string, params interface{}) (*http.Response, error) {
 	}
 	if !auth.GoodForLogin() {
 		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
+		return nil, errors.New("Not logged in.")
 	}
 
 	addAuthToHeader(&req.Header, auth)
