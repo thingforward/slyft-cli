@@ -124,6 +124,11 @@ func main() {
 	if len(os.Args) <= 1 {
 		showBanner()
 	}
+	err := UpdateCheck(VERSION)
+	if err != nil {
+		Log.Error(err)
+		return
+	}
 
 	app := cli.App("slyft", "")
 
