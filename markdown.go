@@ -8,22 +8,22 @@ import (
 
 func markdownHeading(s string, level int) string {
 	var b bytes.Buffer
-  if level < 3 {
-    b.WriteString(s + "\n")
-    for i := 0; i < len(s); i++ {
-      underline := "="
-      if level > 1 {
-        underline = "-"
-      }
-      b.WriteString(underline)
-    }
-  } else {
-    for i := 0; i < level; i++ {
-      b.WriteByte('#')
-    }
-    b.WriteString(" " + s)
-  }
-  b.WriteString("\n\n")
+	if level < 3 {
+		b.WriteString(s + "\n")
+		for i := 0; i < len(s); i++ {
+			underline := "="
+			if level > 1 {
+				underline = "-"
+			}
+			b.WriteString(underline)
+		}
+	} else {
+		for i := 0; i < level; i++ {
+			b.WriteByte('#')
+		}
+		b.WriteString(" " + s)
+	}
+	b.WriteString("\n\n")
 	return b.String()
 }
 
