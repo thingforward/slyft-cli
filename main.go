@@ -76,12 +76,12 @@ func init() {
 
 func showBanner() {
 	fmt.Printf(`
-       .__           _____  __   
-  _____|  | ___.__._/ ____\/  |_	slyft.io 
+       .__           _____  __
+  _____|  | ___.__._/ ____\/  |_	slyft.io
  /  ___/  |<   |  |\   __\\   __\	The Service Layer for Things
  \___ \|  |_\___  | |  |   |  |  	Licensed under the Apache License, Version 2.0
-/____  >____/ ____| |__|   |__|  
-     \/     \/                   
+/____  >____/ ____| |__|   |__|
+     \/     \/
 `)
 }
 
