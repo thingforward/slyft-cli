@@ -99,7 +99,7 @@ func extractAssetFromBody(body []byte) ([]Asset, error) {
 	return []Asset{*a}, nil
 }
 
-func chooseAsset(endpoint string, askUser bool, message string) (*Asset, error) {
+func chooseAsset(endpoint string, askUser bool, message string, count int) (*Asset, error) {
 	resp, err := Do(endpoint, "GET", nil)
 	if err != nil {
 		return nil, err
@@ -115,6 +115,10 @@ func chooseAsset(endpoint string, askUser bool, message string) (*Asset, error) 
 		return nil, errors.New("No asset. Sorry")
 	}
 	Log.Debugf("assets=%+v", assets)
+
+	if count != 0 {
+		assets = assets[len(assets)-count:]
+	}
 
 	DisplayAssets(assets)
 
@@ -230,7 +234,7 @@ func listAssets(cmd *cli.Cmd) {
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
 		if *all {
-			chooseAsset("/v1/assets", false, "")
+			chooseAsset("/v1/assets", false, "", 0)
 			return
 		} else {
 			if *name == "" {
@@ -244,7 +248,7 @@ func listAssets(cmd *cli.Cmd) {
 			ReportError("Choosing the project", err)
 			return
 		}
-		if _, err = chooseAsset(p.AssetsUrl(), false, ""); err != nil {
+		if _, err = chooseAsset(p.AssetsUrl(), false, "", 0); err != nil {
 			ReportError("Choosing the asset", err)
 		}
 	}
@@ -302,9 +306,10 @@ func (ass *Asset) EndPoint() string {
 }
 
 func removeAsset(cmd *cli.Cmd) {
-	cmd.Spec = "[--project] | [--all]"
+	cmd.Spec = "[--project] [--all | --count]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
-	all := cmd.BoolOpt("all a", false, "Fetch details of all your assets (do not combine with -p)")
+	all := cmd.BoolOpt("all a", false, "Fetch details of all your assets (do not combine with -n)")
+	count := cmd.IntOpt("count n", 1, "Delete the last 'count' asssets of the project (do not compine with -a)")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
@@ -314,8 +319,10 @@ func removeAsset(cmd *cli.Cmd) {
 
 		var ass *Asset
 		var err error
-		if *all || *name == "" {
-			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ")
+		if *all {
+			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ", 0)
+		} else if *name == "" {
+			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ", *count)
 		} else {
 			// first get the project, then get the pid, and make the call.
 			p, err2 := chooseProject(*name, "Which project's assets would you like to see: ")
@@ -323,7 +330,7 @@ func removeAsset(cmd *cli.Cmd) {
 				ReportError("Choosing the project", err)
 				return
 			}
-			ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be removed: ")
+			ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be removed: ", *count)
 		}
 
 		if err != nil {
