@@ -3,9 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"errors"
 )
 
 func Do(resource, method string, params interface{}) (*http.Response, error) {

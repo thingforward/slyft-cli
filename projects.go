@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/jawher/mow.cli"
-	"github.com/olekukonko/tablewriter"
 )
 
 type Project struct {
@@ -73,22 +72,17 @@ func (p *Project) Display() { // String?
 		return
 	}
 
-	var data [][]string
-	data = append(data, []string{"Name", p.Name})
-	data = append(data, []string{"Details", p.Details})
-	data = append(data, []string{"CreatedAt", p.CreatedAt.String()})
-	data = append(data, []string{"UpdatedAt", p.UpdatedAt.String()})
-	data = append(data, []string{"Settings", string(p.Settings)})
+	data := [][]string{
+		[]string{"Key", "Value"},
+		[]string{"Name", p.Name},
+		[]string{"Details", p.Details},
+		[]string{"CreatedAt", p.CreatedAt.String()},
+		[]string{"UpdatedAt", p.UpdatedAt.String()},
+		[]string{"Settings", string(p.Settings)}}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetColWidth(TerminalWidth())
-	table.SetHeader([]string{"Key", "Value"})
-	table.SetBorder(false)
-	table.AppendBulk(data)
-	fmt.Fprintf(os.Stdout, "\n---- Project Details ----\n")
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.Render()
-	fmt.Fprintf(os.Stdout, "\n")
+	fmt.Fprintf(os.Stdout, "%s%s",
+		markdownHeading("Project Details", 1),
+		markdownTable(&data))
 }
 
 func DisplayProjects(projects []Project) {
@@ -102,20 +96,14 @@ func DisplayProjects(projects []Project) {
 		return
 	}
 
-	var data [][]string
+	data := [][]string{
+		{"Number", "Name", "Details"}}
 	for i := range projects {
 		p := projects[i]
 		data = append(data, []string{fmt.Sprintf("%d", i+1), p.Name, p.Details})
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetColWidth(TerminalWidth())
-	table.SetHeader([]string{"Number", "Name", "Details"})
-	table.SetBorder(false)
-	table.AppendBulk(data)
-	fmt.Fprintf(os.Stdout, "\n")
-	table.Render()
-	fmt.Fprintf(os.Stdout, "\n")
+	fmt.Fprint(os.Stdout, markdownTable(&data))
 }
 
 func extractProjectsFromBody(body []byte) ([]Project, error) {
