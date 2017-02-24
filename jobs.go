@@ -10,7 +10,6 @@ import (
 	"time"
 
 	cli "github.com/jawher/mow.cli"
-	"github.com/olekukonko/tablewriter"
 )
 
 type Job struct {
@@ -36,16 +35,18 @@ func (j *Job) Display() { // String?
 		return
 	}
 
-	var data [][]string
-	data = append(data, []string{"Id", fmt.Sprintf("%d", j.ID)})
-	data = append(data, []string{"Kind", j.Kind})
-	data = append(data, []string{"Status", j.Status})
-	data = append(data, []string{"ProjectId", fmt.Sprintf("%d", j.ProjectId)})
-	data = append(data, []string{"ProjectName", j.ProjectName})
-	data = append(data, []string{"CreatedAt", j.CreatedAt.String()})
-	data = append(data, []string{"UpdatedAt", j.UpdatedAt.String()})
-	data = append(data, []string{"ResultMessage", j.Results.ResultMessage})
-	data = append(data, []string{"ResultStatus", fmt.Sprintf("%d", j.Results.ResultStatus)})
+	data := [][]string{
+		[]string{"Key", "Value"},
+		[]string{"Id", fmt.Sprintf("%d", j.ID)},
+		[]string{"Kind", j.Kind},
+		[]string{"Status", j.Status},
+		[]string{"ProjectId", fmt.Sprintf("%d", j.ProjectId)},
+		[]string{"ProjectName", j.ProjectName},
+		[]string{"CreatedAt", j.CreatedAt.String()},
+		[]string{"UpdatedAt", j.UpdatedAt.String()},
+		[]string{"ResultMessage", j.Results.ResultMessage},
+		[]string{"ResultStatus", fmt.Sprintf("%d", j.Results.ResultStatus)}}
+
 	for index, asset := range j.Results.ResultAssets {
 		data = append(data, []string{fmt.Sprintf("ResultAssets[%d]", index), asset})
 	}
@@ -54,15 +55,9 @@ func (j *Job) Display() { // String?
 		data = append(data, []string{fmt.Sprintf("ResultDetails[%d]", index), detail})
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetColWidth(TerminalWidth())
-	table.SetHeader([]string{"Key", "Value"})
-	table.SetBorder(false)
-	table.AppendBulk(data)
-	fmt.Fprintf(os.Stdout, "\n---- Job Details ----\n")
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.Render()
-	fmt.Fprintf(os.Stdout, "\n")
+	fmt.Fprintf(os.Stdout, "%s%s",
+		markdownHeading("Job Details", 1),
+		markdownTable(&data))
 }
 
 func DisplayJobs(jobs []Job) {
@@ -76,20 +71,13 @@ func DisplayJobs(jobs []Job) {
 		return
 	}
 
-	var data [][]string
+	data := [][]string{
+		[]string{"Number", "ID", "Kind", "Status", "Project Name"}}
 	for i := range jobs {
 		j := jobs[i]
 		data = append(data, []string{fmt.Sprintf("%d", i+1), fmt.Sprintf("%d", j.ID), j.Kind, j.Status, j.ProjectName})
 	}
-
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetColWidth(TerminalWidth())
-	table.SetHeader([]string{"Number", "ID", "Kind", "Status", "Project Name"})
-	table.SetBorder(false)
-	table.AppendBulk(data)
-	fmt.Fprintf(os.Stdout, "\n")
-	table.Render()
-	fmt.Fprintf(os.Stdout, "\n")
+	fmt.Fprint(os.Stdout, markdownTable(&data))
 }
 
 func extractJobsFromBody(body []byte) ([]Job, error) {
