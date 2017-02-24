@@ -117,7 +117,11 @@ func chooseAsset(endpoint string, askUser bool, message string, count int) (*Ass
 	Log.Debugf("assets=%+v", assets)
 
 	if count != 0 {
-		assets = assets[len(assets)-count:]
+		start := len(assets) - count
+		if start < 0 {
+			start = 0
+		}
+		assets = assets[start:]
 	}
 
 	DisplayAssets(assets)
