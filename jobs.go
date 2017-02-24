@@ -182,11 +182,16 @@ func postNewJob(kind, name string) *Job {
 
 	Log.Debugf("jobs=%#v", jobs)
 	if len(jobs) == 1 {
-		jobs[0].Display()
-		return &(jobs[0])
-	} else {
-		Log.Errorf("Error, creating a new job returned wrong job data")
+		j := jobs[0]
+		if j.Results.ResultStatus == 0 {
+			fmt.Printf("Job %d is started, use `slyft project status` to view status details\n", j.ID)
+		} else {
+			fmt.Printf("Job %d is completed, use `slyft project status` to view status details\n", j.ID)
+		}
+		return &j
 	}
+
+	Log.Errorf("Error, creating a new job returned wrong job data")
 	return nil
 }
 
