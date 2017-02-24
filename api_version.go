@@ -11,8 +11,7 @@ import (
 	version "github.com/mcuadros/go-version"
 )
 
-//TODO change this location to the final location of the configuration json file
-const CONFIG_JSON_URL = "https://s3-eu-west-1.amazonaws.com/io-slyft-config-stage/slyft_config.json"
+const CONFIG_JSON_URL = "https://s3-eu-west-1.amazonaws.com/io-slyft-config/slyft-config.json"
 
 type configJson struct {
 	APIVersion struct {
