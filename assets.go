@@ -310,10 +310,9 @@ func (ass *Asset) EndPoint() string {
 }
 
 func removeAsset(cmd *cli.Cmd) {
-	cmd.Spec = "[--project] [--all | --count]"
+	cmd.Spec = "[--project] [--count]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
-	all := cmd.BoolOpt("all a", false, "Fetch details of all your assets (do not combine with -n)")
-	count := cmd.IntOpt("count n", 1, "Delete the last 'count' asssets of the project (do not compine with -a)")
+	count := cmd.IntOpt("count n", 1, "Choose from the last 'count' assets of the project (if project is not specified, select from all)")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
@@ -323,9 +322,7 @@ func removeAsset(cmd *cli.Cmd) {
 
 		var ass *Asset
 		var err error
-		if *all {
-			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ", 0)
-		} else if *name == "" {
+		if *name == "" {
 			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ", *count)
 		} else {
 			// first get the project, then get the pid, and make the call.
