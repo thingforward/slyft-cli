@@ -53,7 +53,6 @@ func (j *Job) Display() { // String?
 	for index, detail := range j.Results.ResultDetails {
 		data = append(data, []string{fmt.Sprintf("ResultDetails[%d]", index), detail})
 	}
-	//data = append(data, []string{"ResultDetails", fmt.Sprintf("%s", j.Results.ResultDetails)})
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetColWidth(TerminalWidth())

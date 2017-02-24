@@ -76,12 +76,12 @@ func init() {
 
 func showBanner() {
 	fmt.Printf(`
-       .__           _____  __   
-  _____|  | ___.__._/ ____\/  |_	slyft.io 
+       .__           _____  __
+  _____|  | ___.__._/ ____\/  |_	slyft.io
  /  ___/  |<   |  |\   __\\   __\	The Service Layer for Things
  \___ \|  |_\___  | |  |   |  |  	Licensed under the Apache License, Version 2.0
-/____  >____/ ____| |__|   |__|  
-     \/     \/                   
+/____  >____/ ____| |__|   |__|
+     \/     \/
 `)
 }
 
@@ -111,7 +111,7 @@ Please see CONTRIBUTORS https://github.com/thingforward/slyft-cli/raw/master/CON
 
 Contains libraries from
 * https://github.com/jawher/mow.cli		Copyright (c) 2014 Jawher Moussa
-* https://github.com/mattn/go-runewidth		Copyright (c) 2016 Yasuhiro Matsumoto	
+* https://github.com/mattn/go-runewidth		Copyright (c) 2016 Yasuhiro Matsumoto
 * https://github.com/olekukonko/tablewriter	Copyright (C) 2014 by Oleku Konko
 * https://github.com/op/go-logging		Copyright (c) 2013 Örjan Persson
 * https://github.com/siddontang/go		Copyright (c) 2014 siddontang
