@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func markdownHeading(s string, level int) string {
@@ -48,25 +49,25 @@ func markdownTable(t *[][]string) string {
 	for rowIndex, row := range *t {
 		for cellIndex, cell := range row {
 			if rowIndex == 0 {
-				cell = "**" + cell + "**"
+				cell = strings.ToUpper(cell)
 			}
 			if cellIndex == 0 {
-				b.WriteByte('|')
+				b.WriteString("| ")
 			}
 			b.WriteString(fmt.Sprintf("%-"+strconv.Itoa(maxLengthMap[cellIndex])+"s", cell))
-			b.WriteByte('|')
+			b.WriteString(" | ")
 		}
 		b.WriteByte('\n')
 		if rowIndex == 0 {
 			for cellIndex, _ := range row {
 				if cellIndex == 0 {
-					b.WriteByte('|')
+					b.WriteString("|")
 				}
 				b.WriteByte(':')
-				for i := 0; i < (maxLengthMap[cellIndex] - 1); i++ {
+				for i := 0; i < (maxLengthMap[cellIndex] + 1); i++ {
 					b.WriteByte('-')
 				}
-				b.WriteByte('|')
+				b.WriteString("|")
 			}
 			b.WriteByte('\n')
 		}

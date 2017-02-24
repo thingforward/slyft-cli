@@ -26,15 +26,11 @@ func TestMarkdownHeading(t *testing.T) {
 
 func TestMarkdownTable(t *testing.T) {
 	rows := make([][]string, 2)
-	rows[0] = []string{"A", "B"}
-	rows[1] = []string{"C", "D"}
+	rows[0] = []string{"a", "B"}
+	rows[1] = []string{"C", "d"}
 
 	//add padding
-	expected := `|**A**|**B**|
-|:----|:----|
-|C    |D    |
-
-`
+	expected := "| A     | B     | \n|:------|:------|\n| C     | d     | \n\n"
 
 	md := markdownTable(&rows)
 
