@@ -25,8 +25,8 @@ type SlyftAuth struct {
 }
 
 type SlyftAuthResult struct {
-	Success		bool
-	Errors          []string
+	Success	bool
+	Errors  []string
 }
 
 func (sa SlyftAuth) String() string {
@@ -38,7 +38,7 @@ func (sa SlyftAuth) String() string {
 }
 
 func (sa SlyftAuth) GoodForLogin() bool {
-	return (sa.AccessToken != "" && sa.Client != "" && sa.Uid != "")
+	return sa.AccessToken != "" && sa.Client != "" && sa.Uid != ""
 }
 
 type SlyftRC struct {

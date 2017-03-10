@@ -191,7 +191,6 @@ func readFileAndPostAsset(file string, p *Project) error {
 	if len(assets) == 1 {
 		assets[0].Display()
 	}
-
 	return nil
 }
 
@@ -251,9 +250,11 @@ func listAssets(cmd *cli.Cmd) {
 }
 
 func addAsset(cmd *cli.Cmd) {
-	cmd.Spec = "[--project] --file"
+	cmd.Spec = "[--project] [--file] INPUTFILES..."
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	// --file is kept as documentation relates on it, but will be deprecated
 	file := cmd.StringOpt("file f", "", "path to the file which you want as an asset")
+	files := cmd.StringsArg("INPUTFILES", nil, "Multiple files to upload as assets")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
@@ -269,8 +270,26 @@ func addAsset(cmd *cli.Cmd) {
 			return
 		}
 
-		*file = strings.TrimSpace(*file)
-		readFileAndPostAsset(*file, p)
+		if file != nil && *file != "" {
+			*file = strings.TrimSpace(*file)
+			readFileAndPostAsset(*file, p)
+		}
+		if files != nil {
+			for _, singleFile := range *files {
+				f, err := os.Open(singleFile)
+				fi, err := f.Stat()
+				defer f.Close()
+				switch {
+				case err != nil:
+					fmt.Printf("Unable to read from %s, skipping\n", singleFile)
+				case fi.IsDir():
+					fmt.Printf("Is a directory: %s, skipping\n", singleFile)
+				default:
+					fmt.Printf("Uploading %s ...\n", singleFile)
+					readFileAndPostAsset(singleFile, p)
+				}
+			}
+		}
 	}
 }
 
