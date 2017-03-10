@@ -249,7 +249,7 @@ func listAssets(cmd *cli.Cmd) {
 }
 
 func addAsset(cmd *cli.Cmd) {
-	cmd.Spec = "[--project] [--file] INPUTFILES..."
+	cmd.Spec = "[--project] [--file] [INPUTFILES...]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
 	// --file is kept as documentation relates on it, but will be deprecated
 	file := cmd.StringOpt("file f", "", "path to the file which you want as an asset")
@@ -269,9 +269,13 @@ func addAsset(cmd *cli.Cmd) {
 			return
 		}
 
+		didProcessSomething := false
 		if file != nil && *file != "" {
 			*file = strings.TrimSpace(*file)
-			readFileAndPostAsset(*file, p)
+			err := readFileAndPostAsset(*file, p)
+			if err == nil {
+				didProcessSomething = true
+			}
 		}
 		if files != nil {
 			for _, singleFile := range *files {
@@ -285,10 +289,18 @@ func addAsset(cmd *cli.Cmd) {
 					fmt.Printf("Is a directory: %s, skipping\n", singleFile)
 				default:
 					fmt.Printf("Uploading %s ...\n", singleFile)
-					readFileAndPostAsset(singleFile, p)
+					err := readFileAndPostAsset(singleFile, p)
+					if err == nil {
+						didProcessSomething = true
+					}
 				}
 			}
 		}
+
+		if didProcessSomething == false {
+			fmt.Println("Need to specify --file or give valid files as arguments. Did not upload anything")
+		}
+
 	}
 }
 
