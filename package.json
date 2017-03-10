@@ -1,7 +1,7 @@
 {
   "name": "slyft",
-  "version": "0.3.0",
-  "description": "command line client to slyft-server",
+  "version": "0.3.1",
+  "description": "Command line client to slyft-server",
   "main": "main.go",
   "scripts": {
     "test": "gulp test"
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "https://github.com/thingforward/slyft-cli"
   },
-  "author": "Digital Incubation and Growth GmbH",
+  "author": "(C) Digital Incubation and Growth GmbH",
   "license": "Apache2",
   "homepage": "https://github.com/thingforward/slyft-cli",
   "devDependencies": {
