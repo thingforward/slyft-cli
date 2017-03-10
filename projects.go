@@ -145,8 +145,9 @@ func displayProjectsFromResponse(resp *http.Response, expectedCode int, listExpe
 }
 
 func createProject(cmd *cli.Cmd) {
-	cmd.Spec = "[--name]"
-	name := cmd.StringOpt("name", "", "Name for the project")
+	cmd.Spec = "[--name] [--remember]"
+	name := cmd.StringOpt("name n", "", "Name for the project")
+	remember := cmd.BoolOpt("remember r", false, "Remember project name in the current directory")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
@@ -169,6 +170,32 @@ func createProject(cmd *cli.Cmd) {
 		}
 		defer resp.Body.Close()
 		displayProjectsFromResponse(resp, http.StatusCreated, false)
+
+		if remember != nil && *remember {
+			_, err := os.Open(".slyftproject")
+			if err == nil {
+				fmt.Println("--remember was chosen, but there is already a .slyftproject file. Leaving as-is")
+			} else {
+				fmt.Println("Remembering this project in file .slyftproject")
+
+				slyftProjectFile, err := os.Create(".slyftproject")
+				defer slyftProjectFile.Close()
+				if err != nil {
+					fmt.Println("--remember was chosen, but was unable to create a .slyftproject here.")
+					fmt.Println("Please create manually or use --project/--name parameters")
+					Log.Debug(err)
+				} else {
+					w := bufio.NewWriter(slyftProjectFile)
+					_, err := w.WriteString(*name)
+					if err != nil {
+						fmt.Println("--remember was chosen, but was unable to write to .slyftproject here.")
+						fmt.Println("Please check manually or use --project/--name parameters")
+						Log.Debug(err)
+					}
+					w.Flush()
+				}
+			}
+		}
 	}
 }
 
