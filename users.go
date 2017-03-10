@@ -24,6 +24,11 @@ type SlyftAuth struct {
 	Uid         string `json:"uid"`
 }
 
+type SlyftAuthResult struct {
+	Success		bool
+	Errors          []string
+}
+
 func (sa SlyftAuth) String() string {
 	bytes, err := json.Marshal(sa)
 	if err != nil {
@@ -124,6 +129,7 @@ func displayTermsAndConditions() error {
 	// display terms file contents
 	terms, err := getTerms()
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	fmt.Print("\n-------------------------------------------------\n")
@@ -274,9 +280,21 @@ func authenticateUser(endpoint string, register bool) error {
 
 			}
 		} else {
-			Log.Critical(string(body)) // TODO -- parse and print it beautifully. Extract errors/full_messages/etc.
+			fmt.Print("\nWe're sorry, but your login failed due to the following errors:\n")
+			var sar SlyftAuthResult
+			err := json.Unmarshal(body, &sar)
+			if err == nil {
+				for _, msg := range sar.Errors {
+					fmt.Printf("* %s\n", msg)
+				}
+			} else {
+				// Unable to parse it, log as-is
+				Log.Critical(string(body))
+			}
 		}
 		return errors.New(fmt.Sprintf("Server returned failure: %v\nBye", resp.Status))
+	} else {
+		Log.Critical("Error reading/parsing API output.")
 	}
 
 	return errors.New(fmt.Sprintf("Reading server resonse failed: %v\n", err))
@@ -304,7 +322,7 @@ func LogUserIn() {
 	if err != nil {
 		fmt.Println("Sorry, login failed")
 	} else {
-		fmt.Println("Login successful, have fun...")
+		fmt.Println("Login successful, have fun! For documentation, please have a look at www.slyft.io/docs")
 	}
 }
 
