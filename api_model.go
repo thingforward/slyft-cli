@@ -14,7 +14,7 @@ func DeleteApiModel(inst SlyftApiModelInterface) {
 	if inst == nil {
 		return
 	}
-	confirm := askForConfirmation("Are you sure to delete project '" + inst.getName() + "'?")
+	confirm := askForConfirmation("Are you sure to delete element '" + inst.getName() + "'?")
 	if confirm {
 		resp, err := Do(inst.EndPoint(), "DELETE", nil)
 		defer resp.Body.Close()

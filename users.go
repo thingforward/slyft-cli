@@ -25,7 +25,7 @@ type SlyftAuth struct {
 }
 
 type SlyftAuthResult struct {
-	Success	bool
+	Success bool
 	Errors  []string
 }
 
