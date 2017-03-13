@@ -15,6 +15,7 @@ import (
 	cli "github.com/jawher/mow.cli"
 )
 
+
 type Asset struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
@@ -61,10 +62,10 @@ func DisplayAssets(assets []Asset) {
 	}
 
 	var data [][]string
-	data = append(data, []string{"Number", "Name", "Project Name", "Origin"})
+	data = append(data, []string{"Number", "Name", "UpdatedAt", "Project Name", "Origin"})
 	for i := range assets {
 		a := assets[i]
-		data = append(data, []string{fmt.Sprintf("%d", i+1), a.Name, a.ProjectName, a.Origin})
+		data = append(data, []string{fmt.Sprintf("%d", i+1), a.Name, a.UpdatedAt.String(), a.ProjectName, a.Origin})
 	}
 
 	fmt.Fprintf(os.Stdout, markdownTable(&data))
@@ -101,7 +102,7 @@ func chooseAsset(endpoint string, askUser bool, message string, count int) (*Ass
 	}
 
 	if len(assets) == 0 {
-		return nil, errors.New("No asset. Sorry")
+		return nil, errors.New("No assets found.")
 	}
 	Log.Debugf("assets=%+v", assets)
 
@@ -220,6 +221,59 @@ func getAssetAndSaveToFile(file string, p *Project) {
 	}
 }
 
+func getAllAssets(p *Project) ([]Asset, error) {
+	resp, err := Do(p.AssetsUrl(), "GET", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	assets, err := extractAssetFromResponse(resp, http.StatusOK, true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(assets) == 0 {
+		return nil, errors.New("No assets found.")
+	}
+
+	return assets, nil
+}
+
+func removeSingleFileFromAsset(assets []Asset, file string, p *Project) {
+
+	for _, asset := range assets {
+		if asset.Name == file {
+			fmt.Printf("Deleting asset %s\n", file)
+
+			resp, err := Do(asset.EndPoint(), "DELETE", &AssetNameString{file})
+			Log.Debugf("resp=%#v", resp)
+			if err != nil {
+				Log.Debugf("err=%#v", err)
+				ReportError("Removing asset", err)
+				return
+			}
+			defer resp.Body.Close()
+
+			if err != nil || resp.StatusCode != http.StatusNoContent {
+				if resp.StatusCode == http.StatusNotFound {
+					fmt.Printf("Unable to delete asset with name %s\n", file)
+				} else {
+					fmt.Printf("Something went wrong. Please try again. (ResponseCode: %d)\n", resp.StatusCode)
+				}
+			} else {
+				fmt.Println("Was successfully deleted")
+			}
+
+			return
+		}
+	}
+
+	fmt.Printf("Unable to delete asset with name %s\n", file)
+
+
+}
+
 func listAssets(cmd *cli.Cmd) {
 	cmd.Spec = "[--project] | [--all]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
@@ -253,7 +307,7 @@ func addAsset(cmd *cli.Cmd) {
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
 	// --file is kept as documentation relates on it, but will be deprecated
 	file := cmd.StringOpt("file f", "", "path to the file which you want as an asset")
-	files := cmd.StringsArg( "INPUTFILES", nil, "Multiple files to upload as assets")
+	files := cmd.StringsArg("INPUTFILES", nil, "Multiple files to upload as assets")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
@@ -332,9 +386,10 @@ func (ass *Asset) EndPoint() string {
 }
 
 func removeAsset(cmd *cli.Cmd) {
-	cmd.Spec = "[--project] [--count]"
+	cmd.Spec = "[--project] [--count] [FILES...]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
-	count := cmd.IntOpt("count n", 1, "Choose from the last 'count' assets of the project (if project is not specified, select from all)")
+	count := cmd.IntOpt("count n", 0, "Choose from the last 'count' assets of the project (if project is not specified, select from all)")
+	files := cmd.StringsArg("FILES", nil, "Name(s) of files to delete from asset list")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
@@ -353,15 +408,32 @@ func removeAsset(cmd *cli.Cmd) {
 				ReportError("Choosing the project", err)
 				return
 			}
-			ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be removed: ", *count)
+
+			if files != nil && len(*files) > 0 {
+				assets, err := getAllAssets(p)
+				if err == nil {
+					// locate and delete files
+					for _, singleFile := range *files {
+						removeSingleFileFromAsset(assets, singleFile, p)
+					}
+				} else {
+					Log.Debugf("%#v", err)
+					fmt.Println("Error querying assets.")
+				}
+			} else {
+				// choose interactive
+				ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be removed: ", *count)
+
+				if err != nil {
+					ReportError("Choosing the asset", err)
+					return
+				}
+				Log.Debugf("Choosen asset %#v", ass)
+
+				DeleteApiModel(ass)
+			}
 		}
 
-		if err != nil {
-			ReportError("Choosing the asset", err)
-			return
-		}
-
-		DeleteApiModel(ass)
 	}
 }
 
