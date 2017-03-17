@@ -15,7 +15,6 @@ import (
 	cli "github.com/jawher/mow.cli"
 )
 
-
 type Asset struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
@@ -271,7 +270,6 @@ func removeSingleFileFromAsset(assets []Asset, file string, p *Project) {
 
 	fmt.Printf("Unable to delete asset with name %s\n", file)
 
-
 }
 
 func listAssets(cmd *cli.Cmd) {
@@ -359,9 +357,10 @@ func addAsset(cmd *cli.Cmd) {
 }
 
 func getAsset(cmd *cli.Cmd) {
-	cmd.Spec = "[--project] --file"
+	cmd.Spec = "[--project] [--file] [FILES...]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
 	file := cmd.StringOpt("file f", "", "name of the asset to be downloaded")
+	files := cmd.StringsArg("FILES", nil, "Multiple assets to download")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
@@ -376,8 +375,21 @@ func getAsset(cmd *cli.Cmd) {
 			return
 		}
 
-		*file = strings.TrimSpace(*file)
-		getAssetAndSaveToFile(*file, p)
+		didProcessSomething := false
+		if file != nil && *file != "" {
+			*file = strings.TrimSpace(*file)
+			getAssetAndSaveToFile(*file, p)
+			didProcessSomething = true
+		}
+		if files != nil {
+			for _, singleFile := range *files {
+				getAssetAndSaveToFile(singleFile, p)
+				didProcessSomething = true
+			}
+		}
+		if didProcessSomething == false {
+			fmt.Println("Need to specify --file or give valid files as arguments. Did not download anything")
+		}
 	}
 }
 
