@@ -213,7 +213,7 @@ func jobStatusProject(cmd *cli.Cmd) {
 }
 
 func waitForJobCompletion(job *Job, wait int) bool {
-	fmt.Printf("Waiting (%ds) for job completion..", wait)
+	fmt.Printf("Waiting (max. %d seconds) for job completion.", wait)
 	for wait > 0 {
 		wait -= 5
 		time.Sleep(5 * time.Second)
@@ -246,14 +246,14 @@ func waitForJobCompletion(job *Job, wait int) bool {
 func buildProject(cmd *cli.Cmd) {
 	cmd.Spec = "[--project] [--wait]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
-	wait := cmd.IntOpt("wait w", 30, "Optional number of seconds to wait for job completion")
+	wait := cmd.IntOpt("wait w", 0, "Optional number of seconds to wait for job completion")
 	if *name == "" {
 		*name, _ = ReadProjectLock()
 	}
 
 	cmd.Action = func() {
 		job := postNewJob("build", strings.TrimSpace(*name))
-		if job != nil && wait != nil {
+		if job != nil && wait != nil && *wait > 0 {
 			waitForJobCompletion(job, *wait)
 		}
 	}
@@ -262,14 +262,14 @@ func buildProject(cmd *cli.Cmd) {
 func validateProject(cmd *cli.Cmd) {
 	cmd.Spec = "[--project] [--wait]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
-	wait := cmd.IntOpt("wait w", 30, "Optional number of seconds to wait for job completion")
+	wait := cmd.IntOpt("wait w", 0, "Optional number of seconds to wait for job completion")
 	if *name == "" {
 		*name, _ = ReadProjectLock()
 	}
 
 	cmd.Action = func() {
 		job := postNewJob("validate", strings.TrimSpace(*name))
-		if job != nil && wait != nil {
+		if job != nil && wait != nil && *wait > 0{
 			waitForJobCompletion(job, *wait)
 		}
 	}
