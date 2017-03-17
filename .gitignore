@@ -36,10 +36,13 @@ dist/
 # Home dir binaries
 slyft-cli
 
-# editor tempfiles
+# Editor tempfiles
 *.swp
 Makefile
 cli
 npm-debug.log
 .gopath
 .idea
+
+# Testfiles
+./data

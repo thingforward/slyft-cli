@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -168,28 +169,30 @@ func creatAssetParam(file string) (*AssetParam, error) {
 	}, nil
 }
 
-func readFileAndPostAsset(file string, p *Project) {
+func readFileAndPostAsset(file string, p *Project) error {
 	assetParam, err := creatAssetParam(file)
 	if err != nil {
 		ReportError("Creating request", err)
-		return
+		return err
 	}
 
 	resp, err := Do(p.AssetsUrl(), "POST", assetParam)
 	if err != nil {
 		ReportError("Contacting server", err)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 	assets, err := extractAssetFromResponse(resp, http.StatusCreated, false)
 	if err != nil {
 		ReportError("Creating asset", err)
-		return
+		return err
 	}
 
 	if len(assets) == 1 {
 		assets[0].Display()
 	}
+
+	return nil
 }
 
 func getAssetAndSaveToFile(file string, p *Project) {
@@ -332,6 +335,91 @@ func removeAsset(cmd *cli.Cmd) {
 	}
 }
 
+func updateAssets(cmd *cli.Cmd) {
+	cmd.Spec = "[--project] | [--all]"
+	proj := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	all := cmd.BoolOpt("all a", false, "Fetch details of all your assets (do not combine with -p)")
+
+	cmd.Action = func() {
+		name := *proj
+		name = strings.TrimSpace(name)
+
+		//only worry if --all is not set and --project is empty
+		if *all == false && name == "" {
+			var err error
+			name, err = ReadProjectLock()
+			if err != nil {
+				ReportError("--all flag not set, no --project specified, no project lock found", err)
+				return
+			}
+		}
+
+		endpoint := "/v1/assets"
+		resp, err := Do(endpoint, "GET", nil)
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+		assets, err := extractAssetFromResponse(resp, http.StatusOK, true)
+
+		if err != nil || len(assets) == 0 {
+			return
+		}
+
+		assetTable := [][]string{[]string{"ID", "Name", "ProjectId", "ProjectName", "Origin", "CreatedAt", "UpdatedAt", "Status"}}
+		rows := 0
+
+		for _, a := range assets {
+
+			//project selection
+			if *all == false && strings.Contains(a.ProjectName, name) == false {
+				continue
+			}
+
+			if updateAvailable(a.Name, a.UpdatedAt) == false {
+				continue
+			}
+
+			p, err := FindProjectById(a.ProjectId)
+			if err != nil {
+				fmt.Printf("Project ID %d not found\n", a.ProjectId)
+				continue
+			}
+
+			err = readFileAndPostAsset(a.Name, p)
+			if err != nil {
+				fmt.Println("Error on readFileAndPostAsset")
+				continue
+			}
+
+			row := []string{strconv.Itoa(a.ID), a.Name, strconv.Itoa(a.ProjectId), a.ProjectName, a.Origin, a.CreatedAt.String(), a.UpdatedAt.String(), "Update"}
+			assetTable = append(assetTable, row)
+			rows++
+		}
+
+		if rows == 0 {
+			return
+		}
+
+		plural := "s"
+		if rows == 1 {
+			plural = ""
+		}
+
+		fmt.Fprintf(os.Stdout, "%s%s",
+			markdownHeading(fmt.Sprintf("Updated %d asset%s", rows, plural), 1),
+			markdownTable(&assetTable))
+	}
+}
+
+func updateAvailable(name string, updatedAt time.Time) bool {
+	info, err := os.Stat(name)
+	if err != nil || info.ModTime().After(updatedAt) == false {
+		return false
+	}
+	return true
+}
+
 func RegisterAssetRoutes(proj *cli.Cmd) {
 	SetupLogger()
 
@@ -339,4 +427,5 @@ func RegisterAssetRoutes(proj *cli.Cmd) {
 	proj.Command("list ls", "List your assets", listAssets)
 	proj.Command("get g", "Download a single asset", getAsset)
 	proj.Command("delete d", "Remove and asset from a project", removeAsset)
+	proj.Command("update u", "Update assets for a project", updateAssets)
 }
