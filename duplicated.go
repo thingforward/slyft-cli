@@ -39,11 +39,6 @@ func extractProjectFromResponse(resp *http.Response, expectedCode int, listExpec
 }
 
 func extractAssetFromResponse(resp *http.Response, expectedCode int, listExpected bool) ([]Asset, error) {
-	if resp.StatusCode != expectedCode {
-		Log.Debugf("resp.Code=%#v / expected=%d", resp.StatusCode, expectedCode)
-		return nil, errors.New(respCodeToErrorMsg(resp, expectedCode))
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		Log.Debugf("err=%#v", err)
@@ -51,7 +46,18 @@ func extractAssetFromResponse(resp *http.Response, expectedCode int, listExpecte
 	}
 	Log.Debugf("body=%v", string(body))
 
+	// this is what happens when there is a duplicate. We get a conflict message.
+	if resp.StatusCode == http.StatusConflict {
+		Log.Debugf("resp.Code=%#v / expected=%d", resp.StatusCode, expectedCode)
+		assets, err := extractAssetFromBody(body)
+		if err != nil {
+			return nil, err
+		}
+		return assets, errors.New(fmt.Sprintf("Failed with the wrong code: %v. (expected %v)\nErrors: %s\n", resp.StatusCode, expectedCode, body))
+	}
+
 	if resp.StatusCode != expectedCode {
+		Log.Debugf("resp.Code=%#v / expected=%d", resp.StatusCode, expectedCode)
 		return nil, errors.New(fmt.Sprintf("Failed with the wrong code: %v. (expected %v)\nErrors: %s\n", resp.StatusCode, expectedCode, body))
 	}
 

@@ -324,6 +324,10 @@ func (p *Project) EndPoint() string {
 	return fmt.Sprintf("/v1/projects/%d", p.ID)
 }
 
+func (p *Project) AssetUrl(id int) string {
+	return fmt.Sprintf("%s/%d", p.AssetsUrl(), id)
+}
+
 func (p *Project) AssetsUrl() string {
 	return p.EndPoint() + "/assets"
 }
