@@ -168,6 +168,22 @@ func creatAssetParam(file string) (*AssetParam, error) {
 	}, nil
 }
 
+func putAsset(id int, assetParam *AssetParam, p *Project) error {
+	resp, err := Do(p.AssetUrl(id), "PUT", assetParam)
+	if err != nil {
+		ReportError("Contacting server", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		Log.Debugf("resp.Code=%#v / expected=%d", resp.StatusCode, http.StatusNoContent)
+		return errors.New(fmt.Sprintf("Failed with the wrong code: %v. (expected %v)\n", resp.StatusCode, http.StatusNoContent))
+	}
+
+	return nil
+}
+
 func readFileAndPostAsset(file string, p *Project) error {
 	assetParam, err := creatAssetParam(file)
 	if err != nil {
@@ -183,6 +199,14 @@ func readFileAndPostAsset(file string, p *Project) error {
 	defer resp.Body.Close()
 	assets, err := extractAssetFromResponse(resp, http.StatusCreated, false)
 	if err != nil {
+		if len(assets) == 1 {
+			// we have a duplicate.
+			if askForConfirmation("The asset already exists. Do you want to overwrite it?") {
+				assets[0].Display()
+				return putAsset(assets[0].ID, assetParam, p)
+			}
+			return nil
+		}
 		ReportError("Creating asset", err)
 		return err
 	}
