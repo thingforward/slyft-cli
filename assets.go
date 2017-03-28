@@ -449,6 +449,11 @@ func removeAsset(cmd *cli.Cmd) {
 		var err error
 		if *name == "" {
 			ass, err = chooseAsset("/v1/assets", true, "Which one shall be deleted: ", *count)
+			if err == nil {
+				DeleteApiModel(ass)
+			} else {
+				ReportError("Unable to choose/delete asset(s)", err)
+			}
 		} else {
 			// first get the project, then get the pid, and make the call.
 			p, err2 := chooseProject(*name, "Which project's assets would you like to see: ")
@@ -470,7 +475,7 @@ func removeAsset(cmd *cli.Cmd) {
 				}
 			} else {
 				// choose interactive
-				ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be removed: ", *count)
+				ass, err = chooseAsset(p.AssetsUrl(), true, "Which one shall be deleted: ", *count)
 
 				if err != nil {
 					ReportError("Choosing the asset", err)
