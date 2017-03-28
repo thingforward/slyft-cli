@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -184,7 +185,9 @@ func putAsset(id int, assetParam *AssetParam, p *Project) error {
 	return nil
 }
 
-func readFileAndPostAsset(file string, p *Project) error {
+func readFileAndPostAsset(file string, p *Project, forceFlag bool) error {
+	fmt.Printf("Saving asset %s\n", file)
+
 	assetParam, err := creatAssetParam(file)
 	if err != nil {
 		ReportError("Creating request", err)
@@ -201,7 +204,17 @@ func readFileAndPostAsset(file string, p *Project) error {
 	if err != nil {
 		if len(assets) == 1 {
 			// we have a duplicate.
-			if askForConfirmation("The asset already exists. Do you want to overwrite it?") {
+			okToUpdate := false
+			if forceFlag {
+				// overwrite
+				okToUpdate = true
+			} else {
+				// ask
+				okToUpdate = askForConfirmation("The asset already exists. Do you want to overwrite it?")
+			}
+
+			// we have a duplicate.
+			if okToUpdate {
 				assets[0].Display()
 				return putAsset(assets[0].ID, assetParam, p)
 			}
@@ -348,7 +361,7 @@ func addAsset(cmd *cli.Cmd) {
 		didProcessSomething := false
 		if file != nil && *file != "" {
 			*file = strings.TrimSpace(*file)
-			err := readFileAndPostAsset(*file, p)
+			err := readFileAndPostAsset(*file, p, false)
 			if err == nil {
 				didProcessSomething = true
 			}
@@ -365,7 +378,7 @@ func addAsset(cmd *cli.Cmd) {
 					fmt.Printf("Is a directory: %s, skipping\n", singleFile)
 				default:
 					fmt.Printf("Uploading %s ...\n", singleFile)
-					err := readFileAndPostAsset(singleFile, p)
+					err := readFileAndPostAsset(singleFile, p, false)
 					if err == nil {
 						didProcessSomething = true
 					}
@@ -478,6 +491,89 @@ func removeAsset(cmd *cli.Cmd) {
 	}
 }
 
+func updateAssets(cmd *cli.Cmd) {
+	cmd.Spec = "[--project]"
+	proj := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+
+	cmd.Action = func() {
+		name := *proj
+		name = strings.TrimSpace(name)
+
+		if name == "" {
+			var err error
+			name, err = ReadProjectLock()
+			if err != nil {
+				ReportError("no --project specified, no project lock found", err)
+				return
+			}
+		}
+
+		endpoint := "/v1/assets"
+		resp, err := Do(endpoint, "GET", nil)
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+		assets, err := extractAssetFromResponse(resp, http.StatusOK, true)
+
+		if err != nil || len(assets) == 0 {
+			return
+		}
+
+		assetTable := [][]string{[]string{"ID", "Name", "ProjectId", "ProjectName", "Origin", "CreatedAt", "UpdatedAt", "Status"}}
+		rows := 0
+
+		for _, a := range assets {
+
+			//project selection
+			if strings.Contains(a.ProjectName, name) == false {
+				continue
+			}
+
+			if updateAvailable(a.Name, a.UpdatedAt) == false {
+				continue
+			}
+
+			p, err := FindProjectById(a.ProjectId)
+			if err != nil {
+				fmt.Printf("Project ID %d not found\n", a.ProjectId)
+				continue
+			}
+
+			err = readFileAndPostAsset(a.Name, p, false)
+			if err != nil {
+				fmt.Println("Error on readFileAndPostAsset")
+				continue
+			}
+
+			row := []string{strconv.Itoa(a.ID), a.Name, strconv.Itoa(a.ProjectId), a.ProjectName, a.Origin, a.CreatedAt.String(), a.UpdatedAt.String(), "Update"}
+			assetTable = append(assetTable, row)
+			rows++
+		}
+
+		if rows == 0 {
+			return
+		}
+
+		plural := "s"
+		if rows == 1 {
+			plural = ""
+		}
+
+		fmt.Fprintf(os.Stdout, "%s%s",
+			markdownHeading(fmt.Sprintf("Updated %d asset%s", rows, plural), 1),
+			markdownTable(&assetTable))
+	}
+}
+
+func updateAvailable(name string, updatedAt time.Time) bool {
+	info, err := os.Stat(name)
+	if err != nil || info.ModTime().After(updatedAt) == false {
+		return false
+	}
+	return true
+}
+
 func RegisterAssetRoutes(proj *cli.Cmd) {
 	SetupLogger()
 
@@ -485,4 +581,5 @@ func RegisterAssetRoutes(proj *cli.Cmd) {
 	proj.Command("list ls", "List your assets", listAssets)
 	proj.Command("get g", "Download a single asset", getAsset)
 	proj.Command("delete d", "Remove and asset from a project", removeAsset)
+	proj.Command("update u", "Update assets for a project", updateAssets)
 }

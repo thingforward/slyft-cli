@@ -74,11 +74,13 @@ func (p *Project) Display() { // String?
 
 	data := [][]string{
 		[]string{"Key", "Value"},
+		[]string{"ID", strconv.Itoa(p.ID)},
 		[]string{"Name", p.Name},
 		[]string{"Details", p.Details},
 		[]string{"CreatedAt", p.CreatedAt.String()},
 		[]string{"UpdatedAt", p.UpdatedAt.String()},
-		[]string{"Settings", string(p.Settings)}}
+		[]string{"Settings", string(p.Settings)},
+	}
 
 	fmt.Fprintf(os.Stdout, "%s%s",
 		markdownHeading("Project Details", 1),
@@ -234,6 +236,33 @@ func settingsProject(cmd *cli.Cmd) {
 	}
 }
 
+func FindProjectById(id int) (*Project, error) {
+	//TODO: ensure only one match possible provided IDs are unique
+	resp, err := Do("/v1/projects", "GET", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	projects, err := extractProjectFromResponse(resp, http.StatusOK, true)
+	if err != nil {
+		return nil, err
+	}
+
+	notFoundError := errors.New(fmt.Sprintf("No project with ID %d", id))
+
+	if len(projects) == 0 {
+		return nil, notFoundError
+	}
+
+	for _, project := range projects {
+		if project.ID == id {
+			return &project, nil
+		}
+	}
+	return nil, notFoundError
+}
+
 func FindProjects(portion string) (*http.Response, error) {
 	if strings.TrimSpace(portion) == "" {
 		return Do("/v1/projects", "GET", nil)
@@ -285,7 +314,7 @@ func chooseProject(portion, message string) (*Project, error) {
 	}
 
 	if choice > len(projects) {
-		return nil, errors.New("Plese choose a number from the first column")
+		return nil, errors.New("Please choose a number from the first column")
 	}
 
 	return &projects[choice-1], nil
