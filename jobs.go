@@ -269,7 +269,7 @@ func validateProject(cmd *cli.Cmd) {
 
 	cmd.Action = func() {
 		job := postNewJob("validate", strings.TrimSpace(*name))
-		if job != nil && wait != nil && *wait > 0{
+		if job != nil && wait != nil && *wait > 0 {
 			waitForJobCompletion(job, *wait)
 		}
 	}

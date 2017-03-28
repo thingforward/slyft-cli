@@ -539,7 +539,7 @@ func updateAssets(cmd *cli.Cmd) {
 				continue
 			}
 
-			err = readFileAndPostAsset(a.Name, p,false)
+			err = readFileAndPostAsset(a.Name, p, false)
 			if err != nil {
 				fmt.Println("Error on readFileAndPostAsset")
 				continue
