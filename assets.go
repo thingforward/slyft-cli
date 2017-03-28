@@ -185,7 +185,9 @@ func putAsset(id int, assetParam *AssetParam, p *Project) error {
 	return nil
 }
 
-func readFileAndPostAsset(file string, p *Project) error {
+func readFileAndPostAsset(file string, p *Project, forceFlag bool) error {
+	fmt.Printf("Saving asset %s\n", file)
+
 	assetParam, err := creatAssetParam(file)
 	if err != nil {
 		ReportError("Creating request", err)
@@ -201,8 +203,17 @@ func readFileAndPostAsset(file string, p *Project) error {
 	assets, err := extractAssetFromResponse(resp, http.StatusCreated, false)
 	if err != nil {
 		if len(assets) == 1 {
+			okToUpdate := false
+			if forceFlag {
+				// overwrite
+				okToUpdate = true
+			} else {
+				// ask
+				okToUpdate = askForConfirmation("The asset already exists. Do you want to overwrite it?")
+			}
+
 			// we have a duplicate.
-			if askForConfirmation("The asset already exists. Do you want to overwrite it?") {
+			if okToUpdate {
 				assets[0].Display()
 				return putAsset(assets[0].ID, assetParam, p)
 			}
@@ -349,7 +360,7 @@ func addAsset(cmd *cli.Cmd) {
 		didProcessSomething := false
 		if file != nil && *file != "" {
 			*file = strings.TrimSpace(*file)
-			err := readFileAndPostAsset(*file, p)
+			err := readFileAndPostAsset(*file, p, false)
 			if err == nil {
 				didProcessSomething = true
 			}
@@ -366,7 +377,7 @@ func addAsset(cmd *cli.Cmd) {
 					fmt.Printf("Is a directory: %s, skipping\n", singleFile)
 				default:
 					fmt.Printf("Uploading %s ...\n", singleFile)
-					err := readFileAndPostAsset(singleFile, p)
+					err := readFileAndPostAsset(singleFile, p, false)
 					if err == nil {
 						didProcessSomething = true
 					}
@@ -475,20 +486,18 @@ func removeAsset(cmd *cli.Cmd) {
 }
 
 func updateAssets(cmd *cli.Cmd) {
-	cmd.Spec = "[--project] | [--all]"
+	cmd.Spec = "[--project]"
 	proj := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
-	all := cmd.BoolOpt("all a", false, "Fetch details of all your assets (do not combine with -p)")
 
 	cmd.Action = func() {
 		name := *proj
 		name = strings.TrimSpace(name)
 
-		//only worry if --all is not set and --project is empty
-		if *all == false && name == "" {
+		if name == "" {
 			var err error
 			name, err = ReadProjectLock()
 			if err != nil {
-				ReportError("--all flag not set, no --project specified, no project lock found", err)
+				ReportError("no --project specified, no project lock found", err)
 				return
 			}
 		}
@@ -511,7 +520,7 @@ func updateAssets(cmd *cli.Cmd) {
 		for _, a := range assets {
 
 			//project selection
-			if *all == false && strings.Contains(a.ProjectName, name) == false {
+			if strings.Contains(a.ProjectName, name) == false {
 				continue
 			}
 
@@ -525,7 +534,7 @@ func updateAssets(cmd *cli.Cmd) {
 				continue
 			}
 
-			err = readFileAndPostAsset(a.Name, p)
+			err = readFileAndPostAsset(a.Name, p,false)
 			if err != nil {
 				fmt.Println("Error on readFileAndPostAsset")
 				continue
