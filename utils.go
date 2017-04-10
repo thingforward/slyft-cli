@@ -12,8 +12,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/siddontang/go/log"
 )
 
 func askForConfirmation(s string) bool {
@@ -61,7 +59,7 @@ func readFile(fileName string) ([]byte, error) {
 
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Debugf("Reading %s failed: %v.\n", file.Name(), err)
+		Log.Debugf("Reading %s failed: %v.\n", file.Name(), err)
 		return nil, err
 	}
 	return bytes, nil
