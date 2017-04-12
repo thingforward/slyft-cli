@@ -290,11 +290,13 @@ func listProjects(cmd *cli.Cmd) {
 func chooseProject(portion, message string) (*Project, error) {
 	resp, err := FindProjects(portion)
 	if err != nil {
+		Log.Debugf("chooseProject: err=%s", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	projects, err := extractProjectFromResponse(resp, http.StatusOK, true)
 	if err != nil {
+		Log.Debugf("chooseProject: err=%s", err)
 		return nil, err
 	}
 

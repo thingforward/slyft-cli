@@ -183,26 +183,26 @@ func postNewJob(kind, name string) *Job {
 }
 
 func jobStatusProject(cmd *cli.Cmd) {
-	cmd.Spec = "[--project] | [--all]"
+	cmd.Spec = "[--project]"
 	name := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
-	all := cmd.BoolOpt("all a", false, "Fetch details of all your jobs (do not combine with -p)")
 
 	cmd.Action = func() {
 		*name = strings.TrimSpace(*name)
+		// if project name not given, try to read project lock file
 		if *name == "" {
 			*name, _ = ReadProjectLock()
 		}
-		if *all || *name == "" {
-			_, err := chooseJob("/v1/jobs", false, "")
-			ReportError("Choosing the job", err)
+		var p *Project
+		var err error
+		// still no project known? We need to ask user for specific project
+		if *name == "" {
+			p, err = chooseProject(*name, "Which project's jobs would you like to see: ")
+			if p == nil || err != nil {
+				ReportError("Choosing the project", err)
+				return
+			}
 		}
 
-		// first get the project, then get the pid, and make the call.
-		p, err := chooseProject(*name, "Which project's jobs would you like to see: ")
-		if err != nil {
-			ReportError("Choosing the project", err)
-			return
-		}
 		job, err := chooseJob(p.JobsUrl(), true, "Select a job id to show more details: ")
 		if err != nil {
 			ReportError("Selecting the job", err)
