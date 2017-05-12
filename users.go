@@ -393,6 +393,71 @@ func DeleteUser() {
 	}
 }
 
+func ChangePassword() {
+	var email string
+	auth, err := readAuthFromConfig()
+	var changePasswordForLoggedInUser bool
+	if err != nil || !auth.GoodForLogin() {
+		fmt.Print("Please provide the email address you have used to register: ")
+		email, _ = bufio.NewReader(os.Stdin).ReadString('\n')
+		email = strings.TrimSpace(email)
+		if !validateEmail(email) {
+			fmt.Println("Not a valid email address. Please try again.")
+			return
+		}
+	} else {
+		email = auth.Uid
+		fmt.Printf("You are registered with the email %s\n", email)
+		changePasswordForLoggedInUser = true
+	}
+
+	password := readSecret("Please provide the password for this account: ")
+	password = strings.TrimSpace(password)
+
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(&Credentials{Email: email, Password: password})
+
+	resp, err := http.Post(ServerURL("/auth/sign_in"), "application/json; charset=utf-8", b)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		fmt.Println("Sorry, the credentials do not match. Please try again")
+		return
+	}
+
+	newAuth := extractAuthFromHeader(&resp.Header)
+	password = readSecret("Please provide your new password (min. 6 characters): ")
+	if !validatePassword(password) {
+		fmt.Println("Not a valid password. Please try again.")
+		return
+	}
+
+	passwordConfirmation := readSecret("Please repeat your new password: ")
+
+	if password != passwordConfirmation {
+		fmt.Println("Passwords do not match. Please try again.")
+		return
+	}
+
+	type PwdResetRequest struct {
+		Password             string `json:"password"`
+		PasswordConfirmation string `json:"password_confirmation"`
+	}
+	resp, err = DoAuth("/auth/password", "PUT", &PwdResetRequest{Password: password, PasswordConfirmation: passwordConfirmation}, &newAuth)
+
+	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent) {
+		fmt.Println("Sorry, changing password failed.")
+		Log.Debugf("err=%#v", err)
+		Log.Debugf("err=%#v", resp)
+		return
+	}
+
+	fmt.Println("The password has been reset for account: ", email)
+	Log.Debugf("resp=%#v", resp)
+	if changePasswordForLoggedInUser {
+		deactivateLogin() // We leave it to the server whether to clean up the tokens.
+		fmt.Println("Please login with your new credentials.")
+	}
+}
+
 func RegisterUserRoutes(user *cli.Cmd) {
 	SetupLogger()
 
@@ -400,4 +465,5 @@ func RegisterUserRoutes(user *cli.Cmd) {
 	user.Command("login l", "Login with your credentials", func(cmd *cli.Cmd) { cmd.Action = LogUserIn })
 	user.Command("logout", "Log out from your session", func(cmd *cli.Cmd) { cmd.Action = LogUserOut })
 	user.Command("delete", "Delete your account", func(cmd *cli.Cmd) { cmd.Action = DeleteUser })
+	user.Command("change-password cp", "Change your password", func(cmd *cli.Cmd) { cmd.Action = ChangePassword })
 }

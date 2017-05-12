@@ -9,6 +9,20 @@ import (
 )
 
 func Do(resource, method string, params interface{}) (*http.Response, error) {
+	auth, err := readAuthFromConfig()
+	if err != nil {
+		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
+		return nil, err
+	}
+	return DoAuth(resource, method, params, auth)
+}
+
+func DoAuth(resource, method string, params interface{}, auth *SlyftAuth) (*http.Response, error) {
+	if auth == nil || !auth.GoodForLogin() {
+		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
+		return nil, errors.New("Not logged in.")
+	}
+
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(params)
 	req, err := http.NewRequest(method, ServerURL(resource), b)
@@ -16,16 +30,6 @@ func Do(resource, method string, params interface{}) (*http.Response, error) {
 	if err != nil {
 		Log.Critical("Failed to create a request: " + err.Error())
 		return nil, err
-	}
-
-	auth, err := readAuthFromConfig()
-	if err != nil {
-		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
-		return nil, err
-	}
-	if !auth.GoodForLogin() {
-		fmt.Println("You do not seem to be logged in. Please do a `slyft user login`")
-		return nil, errors.New("Not logged in.")
 	}
 
 	addAuthToHeader(&req.Header, auth)
