@@ -70,6 +70,12 @@ type TermsAcceptance struct {
 	Timestamp string `json:"timestamp"`
 }
 
+type PwdResetRequest struct {
+	Code                 string `json:"code,omitempty"`
+	Password             string `json:"password"`
+	PasswordConfirmation string `json:"password_confirmation"`
+}
+
 func readSecret(ask string) string {
 	pwd_from_env := os.Getenv("SLYFT_USER_REGISTRATION_PWD")
 	if len(pwd_from_env) == 0 {
@@ -411,7 +417,43 @@ func ChangePassword() {
 		changePasswordForLoggedInUser = true
 	}
 
-	password := readSecret("Please provide the password for this account: ")
+	resetRequest, err := askUserForPasswordAndConfirmation()
+	if err != nil {
+		fmt.Printf("invalid input: %s\n", err)
+		return
+	}
+
+	err = updatePasswordForAuthenticatedUser(email, resetRequest)
+	if err != nil {
+		fmt.Printf("Could not reset password: %s\n", err)
+		return
+	}
+
+	fmt.Println("The password has been reset for account: ", email)
+	if changePasswordForLoggedInUser {
+		deactivateLogin() // We leave it to the server whether to clean up the tokens.
+		fmt.Println("Please login with your new credentials.")
+	}
+}
+
+func askUserForPasswordAndConfirmation() (*PwdResetRequest, error) {
+	password := readSecret("Please provide your new password (min. 6 characters): ")
+	if !validatePassword(password) {
+		err := fmt.Errorf("Not a valid password. Please try again.")
+		return nil, err
+	}
+
+	passwordConfirmation := readSecret("Please repeat your new password: ")
+
+	if password != passwordConfirmation {
+		err := fmt.Errorf("Passwords do not match. Please try again.")
+		return nil, err
+	}
+	return &PwdResetRequest{Password: password, PasswordConfirmation: passwordConfirmation}, nil
+}
+
+func updatePasswordForAuthenticatedUser(email string, resetRequest *PwdResetRequest) error {
+	password := readSecret("Please provide your current password: ")
 	password = strings.TrimSpace(password)
 
 	b := new(bytes.Buffer)
@@ -419,43 +461,20 @@ func ChangePassword() {
 
 	resp, err := http.Post(ServerURL("/auth/sign_in"), "application/json; charset=utf-8", b)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		fmt.Println("Sorry, the credentials do not match. Please try again")
-		return
+		return fmt.Errorf("Sorry, the credentials are not correct. Please try again")
 	}
 
 	newAuth := extractAuthFromHeader(&resp.Header)
-	password = readSecret("Please provide your new password (min. 6 characters): ")
-	if !validatePassword(password) {
-		fmt.Println("Not a valid password. Please try again.")
-		return
-	}
 
-	passwordConfirmation := readSecret("Please repeat your new password: ")
-
-	if password != passwordConfirmation {
-		fmt.Println("Passwords do not match. Please try again.")
-		return
-	}
-
-	type PwdResetRequest struct {
-		Password             string `json:"password"`
-		PasswordConfirmation string `json:"password_confirmation"`
-	}
-	resp, err = DoAuth("/auth/password", "PUT", &PwdResetRequest{Password: password, PasswordConfirmation: passwordConfirmation}, &newAuth)
+	resp, err = DoAuth("/auth/password", "PUT", resetRequest, &newAuth)
+	Log.Debugf("resp=%#v", resp)
 
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent) {
-		fmt.Println("Sorry, changing password failed.")
 		Log.Debugf("err=%#v", err)
 		Log.Debugf("err=%#v", resp)
-		return
+		return fmt.Errorf("Sorry, changing password failed.")
 	}
-
-	fmt.Println("The password has been reset for account: ", email)
-	Log.Debugf("resp=%#v", resp)
-	if changePasswordForLoggedInUser {
-		deactivateLogin() // We leave it to the server whether to clean up the tokens.
-		fmt.Println("Please login with your new credentials.")
-	}
+	return nil
 }
 
 func RegisterUserRoutes(user *cli.Cmd) {
