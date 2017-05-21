@@ -399,6 +399,44 @@ func DeleteUser() {
 	}
 }
 
+func ForgotPassword() {
+	var email string
+	type forgotPwd struct {
+		Email       string `json:"email"`
+		RedirectUrl string `json:"redirect_url"`
+	}
+	auth, err := readAuthFromConfig()
+	if err != nil || !auth.GoodForLogin() {
+		fmt.Print("Please provide the email address you have used to register: ")
+		email, _ = bufio.NewReader(os.Stdin).ReadString('\n')
+		email = strings.TrimSpace(email)
+		if !validateEmail(email) {
+			fmt.Println("Not a valid email address. Please try again.")
+			return
+		}
+	} else {
+		email = auth.Uid
+		fmt.Printf("You are registered with the email %s\n", email)
+	}
+	fmt.Printf("We will send an email to %s containing a reset code.\nThen use the change password function to reset your password using the token. ", email)
+	cont := askForConfirmation("continue?")
+	if !cont {
+		return
+	}
+
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(&forgotPwd{Email: email, RedirectUrl: ""})
+
+	resp, err := http.Post(ServerURL("/auth/password"), "application/json; charset=utf-8", b)
+	Log.Debugf("resp=%#v", resp)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		Log.Debugf("err=%#v", err)
+		fmt.Println("Sorry, password could not be reset. Please try again")
+		return
+	}
+	fmt.Println("Check your inbox for an email with the token, then use the change password fucntion")
+}
+
 func ChangePassword() {
 	var email string
 	auth, err := readAuthFromConfig()
@@ -507,4 +545,5 @@ func RegisterUserRoutes(user *cli.Cmd) {
 	user.Command("logout", "Log out from your session", func(cmd *cli.Cmd) { cmd.Action = LogUserOut })
 	user.Command("delete", "Delete your account", func(cmd *cli.Cmd) { cmd.Action = DeleteUser })
 	user.Command("change-password cp", "Change your password", func(cmd *cli.Cmd) { cmd.Action = ChangePassword })
+	user.Command("forgot-password fp", "Request password reset token, forgot password function", func(cmd *cli.Cmd) { cmd.Action = ForgotPassword })
 }
