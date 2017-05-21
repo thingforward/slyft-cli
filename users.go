@@ -417,13 +417,22 @@ func ChangePassword() {
 		changePasswordForLoggedInUser = true
 	}
 
-	resetRequest, err := askUserForPasswordAndConfirmation()
+	resetRequest, err := askUserForNewPasswordAndConfirmation()
 	if err != nil {
 		fmt.Printf("invalid input: %s\n", err)
 		return
 	}
 
-	err = updatePasswordForAuthenticatedUser(email, resetRequest)
+	resetWithToken := askForConfirmation("If you have a reset token, answer (y)")
+	if resetWithToken {
+		fmt.Print("Please provide your password reset token: ")
+		token, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		token = strings.TrimSpace(token)
+		resetRequest.Code = token
+		err = updatePasswordWithResetToken(email, resetRequest)
+	} else {
+		err = updatePasswordForAuthenticatedUser(email, resetRequest)
+	}
 	if err != nil {
 		fmt.Printf("Could not reset password: %s\n", err)
 		return
@@ -432,11 +441,11 @@ func ChangePassword() {
 	fmt.Println("The password has been reset for account: ", email)
 	if changePasswordForLoggedInUser {
 		deactivateLogin() // We leave it to the server whether to clean up the tokens.
-		fmt.Println("Please login with your new credentials.")
 	}
+	fmt.Println("Please login with your new credentials.")
 }
 
-func askUserForPasswordAndConfirmation() (*PwdResetRequest, error) {
+func askUserForNewPasswordAndConfirmation() (*PwdResetRequest, error) {
 	password := readSecret("Please provide your new password (min. 6 characters): ")
 	if !validatePassword(password) {
 		err := fmt.Errorf("Not a valid password. Please try again.")
@@ -450,6 +459,19 @@ func askUserForPasswordAndConfirmation() (*PwdResetRequest, error) {
 		return nil, err
 	}
 	return &PwdResetRequest{Password: password, PasswordConfirmation: passwordConfirmation}, nil
+}
+
+func updatePasswordWithResetToken(email string, resetRequest *PwdResetRequest) error {
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(resetRequest)
+
+	resp, err := http.Post(ServerURL("/password_reset"), "application/json; charset=utf-8", b)
+	Log.Debugf("resp=%#v", resp)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		Log.Debugf("err=%#v", err)
+		return fmt.Errorf("Sorry, password could not be reset. Please try again")
+	}
+	return nil
 }
 
 func updatePasswordForAuthenticatedUser(email string, resetRequest *PwdResetRequest) error {
