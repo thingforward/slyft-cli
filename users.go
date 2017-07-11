@@ -70,6 +70,12 @@ type TermsAcceptance struct {
 	Timestamp string `json:"timestamp"`
 }
 
+type PwdResetRequest struct {
+	Code                 string `json:"code,omitempty"`
+	Password             string `json:"password"`
+	PasswordConfirmation string `json:"password_confirmation"`
+}
+
 func readSecret(ask string) string {
 	pwd_from_env := os.Getenv("SLYFT_USER_REGISTRATION_PWD")
 	if len(pwd_from_env) == 0 {
@@ -393,6 +399,144 @@ func DeleteUser() {
 	}
 }
 
+func ForgotPassword() {
+	var email string
+	type forgotPwd struct {
+		Email       string `json:"email"`
+		RedirectUrl string `json:"redirect_url"`
+	}
+	auth, err := readAuthFromConfig()
+	if err != nil || !auth.GoodForLogin() {
+		fmt.Print("Please provide the email address you have used to register: ")
+		email, _ = bufio.NewReader(os.Stdin).ReadString('\n')
+		email = strings.TrimSpace(email)
+		if !validateEmail(email) {
+			fmt.Println("Not a valid email address. Please try again.")
+			return
+		}
+	} else {
+		email = auth.Uid
+		fmt.Printf("You are registered with the email %s\n", email)
+	}
+	fmt.Printf("We will send an email to %s containing a reset code.\nThen use the change password function to reset your password using the token. ", email)
+	cont := askForConfirmation("continue?")
+	if !cont {
+		return
+	}
+
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(&forgotPwd{Email: email, RedirectUrl: ""})
+
+	resp, err := http.Post(ServerURL("/auth/password"), "application/json; charset=utf-8", b)
+	Log.Debugf("resp=%#v", resp)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		Log.Debugf("err=%#v", err)
+		fmt.Println("Sorry, password could not be reset. Please try again")
+		return
+	}
+	fmt.Println("Check your inbox for an email with the token, then use the change password fucntion")
+}
+
+func ChangePassword() {
+	var email string
+	auth, err := readAuthFromConfig()
+	var changePasswordForLoggedInUser bool
+	if err != nil || !auth.GoodForLogin() {
+		fmt.Print("Please provide the email address you have used to register: ")
+		email, _ = bufio.NewReader(os.Stdin).ReadString('\n')
+		email = strings.TrimSpace(email)
+		if !validateEmail(email) {
+			fmt.Println("Not a valid email address. Please try again.")
+			return
+		}
+	} else {
+		email = auth.Uid
+		fmt.Printf("You are registered with the email %s\n", email)
+		changePasswordForLoggedInUser = true
+	}
+
+	resetRequest, err := askUserForNewPasswordAndConfirmation()
+	if err != nil {
+		fmt.Printf("invalid input: %s\n", err)
+		return
+	}
+
+	resetWithToken := askForConfirmation("If you have a reset token, answer (y)")
+	if resetWithToken {
+		fmt.Print("Please provide your password reset token: ")
+		token, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		token = strings.TrimSpace(token)
+		resetRequest.Code = token
+		err = updatePasswordWithResetToken(email, resetRequest)
+	} else {
+		err = updatePasswordForAuthenticatedUser(email, resetRequest)
+	}
+	if err != nil {
+		fmt.Printf("Could not reset password: %s\n", err)
+		return
+	}
+
+	fmt.Println("The password has been reset for account: ", email)
+	if changePasswordForLoggedInUser {
+		deactivateLogin() // We leave it to the server whether to clean up the tokens.
+	}
+	fmt.Println("Please login with your new credentials.")
+}
+
+func askUserForNewPasswordAndConfirmation() (*PwdResetRequest, error) {
+	password := readSecret("Please provide your new password (min. 6 characters): ")
+	if !validatePassword(password) {
+		err := fmt.Errorf("Not a valid password. Please try again.")
+		return nil, err
+	}
+
+	passwordConfirmation := readSecret("Please repeat your new password: ")
+
+	if password != passwordConfirmation {
+		err := fmt.Errorf("Passwords do not match. Please try again.")
+		return nil, err
+	}
+	return &PwdResetRequest{Password: password, PasswordConfirmation: passwordConfirmation}, nil
+}
+
+func updatePasswordWithResetToken(email string, resetRequest *PwdResetRequest) error {
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(resetRequest)
+
+	resp, err := http.Post(ServerURL("/password_reset"), "application/json; charset=utf-8", b)
+	Log.Debugf("resp=%#v", resp)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		Log.Debugf("err=%#v", err)
+		return fmt.Errorf("Sorry, password could not be reset. Please try again")
+	}
+	return nil
+}
+
+func updatePasswordForAuthenticatedUser(email string, resetRequest *PwdResetRequest) error {
+	password := readSecret("Please provide your current password: ")
+	password = strings.TrimSpace(password)
+
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(&Credentials{Email: email, Password: password})
+
+	resp, err := http.Post(ServerURL("/auth/sign_in"), "application/json; charset=utf-8", b)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Sorry, the credentials are not correct. Please try again")
+	}
+
+	newAuth := extractAuthFromHeader(&resp.Header)
+
+	resp, err = DoAuth("/auth/password", "PUT", resetRequest, &newAuth)
+	Log.Debugf("resp=%#v", resp)
+
+	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent) {
+		Log.Debugf("err=%#v", err)
+		Log.Debugf("err=%#v", resp)
+		return fmt.Errorf("Sorry, changing password failed.")
+	}
+	return nil
+}
+
 func RegisterUserRoutes(user *cli.Cmd) {
 	SetupLogger()
 
@@ -400,4 +544,6 @@ func RegisterUserRoutes(user *cli.Cmd) {
 	user.Command("login l", "Login with your credentials", func(cmd *cli.Cmd) { cmd.Action = LogUserIn })
 	user.Command("logout", "Log out from your session", func(cmd *cli.Cmd) { cmd.Action = LogUserOut })
 	user.Command("delete", "Delete your account", func(cmd *cli.Cmd) { cmd.Action = DeleteUser })
+	user.Command("change-password cp", "Change your password", func(cmd *cli.Cmd) { cmd.Action = ChangePassword })
+	user.Command("forgot-password fp", "Request password reset token, forgot password function", func(cmd *cli.Cmd) { cmd.Action = ForgotPassword })
 }

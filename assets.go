@@ -492,8 +492,9 @@ func removeAsset(cmd *cli.Cmd) {
 }
 
 func updateAssets(cmd *cli.Cmd) {
-	cmd.Spec = "[--project]"
+	cmd.Spec = "[--project] [--force]"
 	proj := cmd.StringOpt("project p", "", "Name (or part of it) of a project")
+	forceOpt := cmd.BoolOpt("force f", false, "If set, do not ask when overwriting (default: false)")
 
 	cmd.Action = func() {
 		name := *proj
@@ -530,7 +531,13 @@ func updateAssets(cmd *cli.Cmd) {
 				continue
 			}
 
-			if updateAvailable(a.Name, a.UpdatedAt) == false {
+			b_updateAvail, err_update := updateAvailable(a.Name, a.UpdatedAt)
+			if err_update != nil {
+				fmt.Printf("Unable to check update for %s (%s)\n", a.Name, err_update)
+				continue
+			}
+			if b_updateAvail == false {
+				fmt.Printf("%s is up-to-date (%s)\n", a.Name, a.UpdatedAt)
 				continue
 			}
 
@@ -540,7 +547,7 @@ func updateAssets(cmd *cli.Cmd) {
 				continue
 			}
 
-			err = readFileAndPostAsset(a.Name, p, false)
+			err = readFileAndPostAsset(a.Name, p, *forceOpt)
 			if err != nil {
 				fmt.Println("Error on readFileAndPostAsset")
 				continue
@@ -555,23 +562,20 @@ func updateAssets(cmd *cli.Cmd) {
 			return
 		}
 
-		plural := "s"
-		if rows == 1 {
-			plural = ""
-		}
+		listAssets(cmd)
 
-		fmt.Fprintf(os.Stdout, "%s%s",
-			markdownHeading(fmt.Sprintf("Updated %d asset%s", rows, plural), 1),
-			markdownTable(&assetTable))
 	}
 }
 
-func updateAvailable(name string, updatedAt time.Time) bool {
+func updateAvailable(name string, updatedAt time.Time) (bool, error) {
 	info, err := os.Stat(name)
-	if err != nil || info.ModTime().After(updatedAt) == false {
-		return false
+	if err != nil {
+		return false, err
 	}
-	return true
+	if info.ModTime().After(updatedAt) == false {
+		return false, nil
+	}
+	return true, nil
 }
 
 func RegisterAssetRoutes(proj *cli.Cmd) {
